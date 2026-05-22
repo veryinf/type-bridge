@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { Command, ConsoleLayout } from "../types/layout";
+import { Command, ConsoleConfig } from "../types/layout";
 
 const BASE_URL = "/api/v1";
 
@@ -42,20 +42,10 @@ export function useApi() {
     return res.json();
   }, []);
 
-  const getLayouts = useCallback(async (): Promise<ConsoleLayout[]> => {
-    const res = await fetch(`${BASE_URL}/layouts`);
+  const getConsoleConfig = useCallback(async (): Promise<ConsoleConfig> => {
+    const res = await fetch(`${BASE_URL}/console`);
     return res.json();
   }, []);
-
-  const getLayout = useCallback(async (id: number): Promise<ConsoleLayout> => {
-    const res = await fetch(`${BASE_URL}/layouts/${id}`);
-    return res.json();
-  }, []);
-
-  const getDefaultLayout = useCallback(async (): Promise<ConsoleLayout | null> => {
-    const layouts = await getLayouts();
-    return layouts.find((l) => l.is_default) || layouts[0] || null;
-  }, [getLayouts]);
 
   return {
     execute,
@@ -66,8 +56,6 @@ export function useApi() {
     moveCursor,
     deletePC,
     getTemplates,
-    getLayouts,
-    getLayout,
-    getDefaultLayout,
+    getConsoleConfig,
   };
 }

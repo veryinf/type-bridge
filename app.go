@@ -59,6 +59,31 @@ var lastOperation struct {
 	Content string
 }
 
+// ConsoleConfig 控制台配置（从 default_console.json 加载）
+type ConsoleConfig struct {
+	HelpText           string         `json:"help_text"`
+	GridColumns        int            `json:"gridColumns"`
+	InputButtons       []ButtonConfig `json:"inputButtons"`
+	ActionButtons      []ButtonConfig `json:"actionButtons"`
+	ExtraActionButtons []ButtonConfig `json:"extraActionButtons"`
+}
+
+// ButtonConfig 按钮配置
+type ButtonConfig struct {
+	ID           string    `json:"id"`
+	Label        string    `json:"label"`
+	Style        string    `json:"style"`
+	Commands     []Command `json:"commands,omitempty"`
+	ClientAction string    `json:"clientAction,omitempty"`
+	Params       string    `json:"params,omitempty"`
+}
+
+var (
+	consoleConfig ConsoleConfig
+	consoleMu     sync.RWMutex
+	consoleFile   = "default_console.json"
+)
+
 type LogEntry struct {
 	Time    string `json:"time"`
 	Type    string `json:"type"`
@@ -80,6 +105,13 @@ func (a *App) startup(ctx context.Context) {
 
 	if err := automation.LoadRules(ruleFile); err != nil {
 		fmt.Printf("警告：加载规则文件失败 %v\n", err)
+	}
+
+	// 加载控制台配置
+	if err := a.loadConsoleConfig(); err != nil {
+		fmt.Printf("警告：加载控制台配置失败 %v\n", err)
+	} else {
+		fmt.Println("控制台配置加载成功")
 	}
 
 	// 初始化数据库
@@ -218,9 +250,8 @@ func StartServer(port int) {
 	mux.HandleFunc("/api/v1/templates", templatesHandler)
 	mux.HandleFunc("/api/v1/templates/", templateHandler)
 
-	// 布局 API
-	mux.HandleFunc("/api/v1/layouts", layoutsHandler)
-	mux.HandleFunc("/api/v1/layouts/", layoutHandler)
+	// 控制台配置 API
+	mux.HandleFunc("/api/v1/console", consoleHandler)
 
 	addr := fmt.Sprintf(":%d", port)
 	fmt.Printf("手机访问地址：http://localhost%s/mobile.html\n", addr)
@@ -425,109 +456,79 @@ func templateHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// layoutsHandler 处理 /api/v1/layouts
-func layoutsHandler(w http.ResponseWriter, r *http.Request) {
+// consoleHandler 处理 /api/v1/console
+func consoleHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	switch r.Method {
 	case http.MethodGet:
-		layouts, err := database.GetAllLayouts()
-		if err != nil {
-			jsonResp(w, "failed", err.Error())
-			return
-		}
-		json.NewEncoder(w).Encode(layouts)
+		consoleMu.RLock()
+		defer consoleMu.RUnlock()
+		json.NewEncoder(w).Encode(consoleConfig)
 
-	case http.MethodPost:
-		var req struct {
-			Name        string `json:"name"`
-			Description string `json:"description"`
-			Author      string `json:"author"`
-			HelpText    string `json:"help_text"`
-			Config      string `json:"config"`
-			IsDefault   bool   `json:"is_default"`
-		}
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	case http.MethodPut:
+		var config ConsoleConfig
+		if err := json.NewDecoder(r.Body).Decode(&config); err != nil {
 			jsonResp(w, "failed", "请求格式错误")
 			return
 		}
-		if req.Name == "" || req.Config == "" {
-			jsonResp(w, "failed", "名称和配置不能为空")
-			return
-		}
-		layout, err := database.CreateLayout(req.Name, req.Description, req.Author, req.HelpText, req.Config, req.IsDefault)
-		if err != nil {
+		if err := saveConsoleConfig(&config); err != nil {
 			jsonResp(w, "failed", err.Error())
 			return
 		}
-		json.NewEncoder(w).Encode(layout)
+		jsonResp(w, "success", "")
 
 	default:
 		jsonResp(w, "failed", "不支持的请求方法")
 	}
 }
 
-// layoutHandler 处理 /api/v1/layouts/{id}
-func layoutHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
+func (a *App) loadConsoleConfig() error {
+	exeDir := getExecDir()
+	filePath := filepath.Join(exeDir, consoleFile)
 
-	// 提取 ID
-	path := r.URL.Path
-	prefix := "/api/v1/layouts/"
-	if !strings.HasPrefix(path, prefix) {
-		jsonResp(w, "failed", "无效的路径")
-		return
-	}
-	idStr := strings.TrimPrefix(path, prefix)
-	idStr = strings.TrimSuffix(idStr, "/")
-	if idStr == "" {
-		jsonResp(w, "failed", "缺少布局ID")
-		return
-	}
-	id, err := strconv.Atoi(idStr)
+	data, err := os.ReadFile(filePath)
 	if err != nil {
-		jsonResp(w, "failed", "无效的布局ID")
-		return
+		return fmt.Errorf("读取控制台配置文件失败: %w", err)
 	}
 
-	switch r.Method {
-	case http.MethodGet:
-		layout, err := database.GetLayoutByID(id)
-		if err != nil {
-			jsonResp(w, "failed", "布局不存在")
-			return
-		}
-		json.NewEncoder(w).Encode(layout)
-
-	case http.MethodPut:
-		var req struct {
-			Name        string `json:"name"`
-			Description string `json:"description"`
-			Author      string `json:"author"`
-			HelpText    string `json:"help_text"`
-			Config      string `json:"config"`
-			IsDefault   bool   `json:"is_default"`
-		}
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			jsonResp(w, "failed", "请求格式错误")
-			return
-		}
-		if err := database.UpdateLayout(id, req.Name, req.Description, req.Author, req.HelpText, req.Config, req.IsDefault); err != nil {
-			jsonResp(w, "failed", err.Error())
-			return
-		}
-		jsonResp(w, "success", "")
-
-	case http.MethodDelete:
-		if err := database.DeleteLayout(id); err != nil {
-			jsonResp(w, "failed", err.Error())
-			return
-		}
-		jsonResp(w, "success", "")
-
-	default:
-		jsonResp(w, "failed", "不支持的请求方法")
+	consoleMu.Lock()
+	defer consoleMu.Unlock()
+	if err := json.Unmarshal(data, &consoleConfig); err != nil {
+		return fmt.Errorf("解析控制台配置文件失败: %w", err)
 	}
+	return nil
+}
+
+func saveConsoleConfig(config *ConsoleConfig) error {
+	exeDir := getExecDir()
+	filePath := filepath.Join(exeDir, consoleFile)
+
+	data, err := json.MarshalIndent(config, "", "  ")
+	if err != nil {
+		return fmt.Errorf("序列化控制台配置失败: %w", err)
+	}
+
+	if err := os.WriteFile(filePath, data, 0644); err != nil {
+		return fmt.Errorf("写入控制台配置文件失败: %w", err)
+	}
+
+	consoleMu.Lock()
+	consoleConfig = *config
+	consoleMu.Unlock()
+	return nil
+}
+
+// GetConsoleConfig Wails 绑定：获取控制台配置
+func (a *App) GetConsoleConfig() ConsoleConfig {
+	consoleMu.RLock()
+	defer consoleMu.RUnlock()
+	return consoleConfig
+}
+
+// SaveConsoleConfig Wails 绑定：保存控制台配置
+func (a *App) SaveConsoleConfig(config ConsoleConfig) error {
+	return saveConsoleConfig(&config)
 }
 
 func trimSpace(s string) string {

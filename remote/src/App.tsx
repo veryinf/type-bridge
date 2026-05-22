@@ -13,13 +13,13 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<Tab>("console");
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [helpText, setHelpText] = useState<string | undefined>();
-  const { getDefaultLayout } = useApi();
+  const { getConsoleConfig } = useApi();
 
   useEffect(() => {
-    getDefaultLayout().then((l) => {
-      if (l) setHelpText(l.help_text);
+    getConsoleConfig().then((config) => {
+      if (config) setHelpText(config.help_text);
     });
-  }, [getDefaultLayout]);
+  }, [getConsoleConfig]);
 
   const renderPage = () => {
     switch (activeTab) {

@@ -4,7 +4,7 @@ import ActionButtons from "../components/ActionButtons";
 import SymbolModal from "../components/SymbolModal";
 import ExpandModal from "../components/ExpandModal";
 import { useApi } from "../hooks/useApi";
-import { ButtonConfig, ConsoleLayout, LayoutConfig } from "../types/layout";
+import { ButtonConfig, ConsoleConfig, LayoutConfig } from "../types/layout";
 
 export default function ConsolePage() {
   const [hasHistory, setHasHistory] = useState(false);
@@ -13,15 +13,13 @@ export default function ConsolePage() {
   const [layout, setLayout] = useState<LayoutConfig | null>(null);
   const inputRef = useRef<InputBoxHandle>(null);
   const lastSentRef = useRef<string>("");
-  const { execute, getDefaultLayout } = useApi();
+  const { execute, getConsoleConfig } = useApi();
 
   useEffect(() => {
-    getDefaultLayout().then((l) => {
-      if (l) {
-        setLayout(l.config);
-      }
+    getConsoleConfig().then((config) => {
+      setLayout(config);
     });
-  }, [getDefaultLayout]);
+  }, [getConsoleConfig]);
 
   const processCommands = useCallback(
     async (buttons: ButtonConfig[]) => {

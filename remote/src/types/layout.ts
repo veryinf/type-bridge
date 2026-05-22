@@ -25,14 +25,6 @@ export interface LayoutConfig {
   gridColumns?: number;
 }
 
-export interface ConsoleLayout {
-  id: number;
-  name: string;
-  description: string;
-  author: string;
+export interface ConsoleConfig extends LayoutConfig {
   help_text: string;
-  is_default: boolean;
-  config: LayoutConfig;
-  created_at: string;
-  updated_at: string;
 }
