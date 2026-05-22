@@ -1,19 +1,167 @@
-# README
+# EasyInput - 手机电脑输入同步工具
 
-## About
+> 📱 手机扫码，电脑打字 - 让手机成为电脑的无线键盘
 
-This is the official Wails React-TS template.
+## ✨ 功能特点
 
-You can configure the project by editing `wails.json`. More information about the project settings can be found
-here: https://wails.io/docs/reference/project-config
+- 📝 **文本同步** - 手机输入文字，直接发送到电脑当前窗口
+- 🔄 **智能替换** - 支持正则表达式自动替换（如：输入"毫安时"自动变成"mAh"）
+- ↵ **远程控制** - 发送回车、撤销、删除等操作
+- 🖱️ **光标移动** - 远程控制电脑光标方向
+- 🔤 **符号包裹** - 快速输入括号、引号等符号配对
+- 📊 **操作日志** - 实时查看操作记录
+- 🖥️ **系统托盘** - 最小化后在后台运行
 
-## Live Development
+## 📥 下载安装
 
-To run in live development mode, run `wails dev` in the project directory. This will run a Vite development
-server that will provide very fast hot reload of your frontend changes. If you want to develop in a browser
-and have access to your Go methods, there is also a dev server that runs on http://localhost:34115. Connect
-to this in your browser, and you can call your Go code from devtools.
+1. 从 [Releases](https://github.com/yourusername/easy-input/releases) 页面下载最新版本
+2. 解压到任意目录
+3. 运行 `EasyInput.exe`
 
-## Building
+## 🚀 快速使用
 
-To build a redistributable, production mode package, use `wails build`.
+### 第一步：启动程序
+
+双击运行 `EasyInput.exe`，程序会显示一个二维码和访问地址。
+
+### 第二步：手机连接
+
+1. 确保手机和电脑连接到同一个 WiFi 网络
+2. 用手机扫描屏幕上的二维码
+3. 或者在手机浏览器输入显示的地址（如：`http://192.168.1.100:5000`）
+
+### 第三步：开始使用
+
+在手机上输入文字，点击"发送"按钮，文字就会出现在电脑当前光标位置。
+
+## 📖 功能说明
+
+### 基本操作
+
+| 按钮 | 功能 |
+|------|------|
+| 发送 | 将输入框的文字发送到电脑（应用替换规则） |
+| 回车 | 发送回车键 |
+| 提交 | 发送文字 + 回车（适合聊天、表单提交） |
+| 清空 | 清空输入框 |
+
+### 快捷操作
+
+| 按钮 | 功能 |
+|------|------|
+| ↑↓←→ | 移动电脑光标 |
+| 删除 | 删除电脑上的字符 |
+| 撤销 | 撤销上一次发送 |
+| 上次 | 重新发送上一次内容 |
+
+### 符号输入
+
+点击符号按钮可以快速输入符号对，如：
+- 括号：`()`
+- 方括号：`[]`
+- 引号：`""`
+- 自定义符号
+
+### 全屏编辑
+
+点击输入框右侧的展开按钮，可以打开全屏编辑器，适合输入长文本。
+
+## ⚙️ 配置说明
+
+### 文本替换规则
+
+在程序目录下的 `hot-rule.txt` 文件中配置替换规则：
+
+```
+# 每行一条规则，格式：查找文本 = 替换文本
+毫安时 = mAh
+赫兹 = Hz
+(艾特)\s*(QQ)\s*点 = @qq.
+```
+
+规则说明：
+- 以 `#` 开头的行是注释
+- 支持正则表达式
+- 替换在发送时自动执行
+
+### 常用规则示例
+
+```
+# 单位替换
+毫安时 = mAh
+伏特 = V
+
+# 邮箱快捷输入
+(艾特)\s*(QQ)\s*点 = @qq.
+(艾特)\s*([一幺]六三)\s*点 = @163.
+
+# 常用符号
+左括号 = (
+右括号 = )
+```
+
+## 💡 使用技巧
+
+1. **快速输入** - 输入常用短语后点击"发送"，比打字更快
+2. **批量操作** - 使用"上次"按钮可以快速重复发送相同内容
+3. **长文本** - 使用全屏编辑器输入长文本，支持多行编辑
+4. **符号配对** - 输入文字后点击符号按钮，自动在文字两端添加符号
+
+## ❓ 常见问题
+
+### Q: 手机无法连接电脑？
+
+A: 请检查：
+1. 手机和电脑是否连接到同一个 WiFi 网络
+2. 电脑防火墙是否阻止了程序（尝试关闭防火墙或添加例外）
+3. 程序是否正常运行（检查系统托盘图标）
+
+### Q: 文字发送后没有出现在电脑上？
+
+A: 请检查：
+1. 电脑上是否有正在输入的窗口（如文本框、编辑器）
+2. 尝试点击电脑上的目标窗口，确保它是活动窗口
+3. 检查程序日志查看是否有错误信息
+
+### Q: 替换规则不生效？
+
+A: 请检查：
+1. `hot-rule.txt` 文件格式是否正确（每行一条规则）
+2. 规则语法是否正确（左边查找，右边替换，用等号连接）
+3. 重启程序使新规则生效
+
+### Q: 如何让程序开机自启动？
+
+A: 目前需要手动设置：
+1. 创建程序的快捷方式
+2. 将快捷方式放到启动文件夹：
+   - 按 `Win + R`，输入 `shell:startup`
+   - 将快捷方式粘贴到打开的文件夹中
+
+### Q: 如何更新程序？
+
+A: 
+1. 程序会自动检查更新（在"关于"页面）
+2. 下载新版本后，关闭旧程序
+3. 用新文件替换旧文件即可（配置文件会保留）
+
+## 📱 支持平台
+
+- ✅ Windows 10/11
+- ✅ macOS（即将支持）
+- ✅ 手机浏览器：Chrome、Safari、Firefox 等现代浏览器
+
+## 📞 获取帮助
+
+- 查看程序内的"帮助"按钮（右下角的 `?` 图标）
+- 在 GitHub 提交 Issue：[项目地址](https://github.com/yourusername/easy-input/issues)
+
+## 📄 许可证
+
+本项目采用 MIT 许可证 - 详见 [LICENSE](LICENSE) 文件
+
+---
+
+**感谢使用 EasyInput！** 🎉
+
+如果觉得好用，请给项目点个 ⭐ Star 支持一下！
