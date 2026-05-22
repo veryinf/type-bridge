@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 
 type Theme = "dark" | "light";
 
-const STORAGE_KEY = "easyinput-theme";
+const STORAGE_KEY = "typebridge-theme";
 
 function getInitialTheme(): Theme {
   try {

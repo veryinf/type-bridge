@@ -17,7 +17,7 @@ export default function SettingsPage() {
 
   useEffect(() => {
     // 从 localStorage 加载设置
-    const saved = localStorage.getItem("easyinput-settings");
+    const saved = localStorage.getItem("typebridge-settings");
     if (saved) {
       try {
         setSettings(JSON.parse(saved));
@@ -30,7 +30,7 @@ export default function SettingsPage() {
   const handleToggle = (key: keyof Settings) => {
     const newSettings = { ...settings, [key]: !settings[key] };
     setSettings(newSettings);
-    localStorage.setItem("easyinput-settings", JSON.stringify(newSettings));
+    localStorage.setItem("typebridge-settings", JSON.stringify(newSettings));
   };
 
   const handleClearData = () => {
@@ -104,11 +104,11 @@ export default function SettingsPage() {
       <div className="settings-group">
         <h3 className="group-title">关于</h3>
         <div className="about-info">
-          <p className="app-name">EasyInput</p>
+          <p className="app-name">Type Bridge</p>
           <p className="app-version">版本 0.0.6</p>
           <p className="app-desc">手机电脑输入同步工具</p>
           <a
-            href="https://github.com/veryinf/easy-input"
+            href="https://github.com/veryinf/type-bridge"
             target="_blank"
             rel="noopener noreferrer"
             className="github-link"

@@ -83,7 +83,7 @@ func (a *App) startup(ctx context.Context) {
 	}
 
 	// 初始化数据库
-	dbPath := filepath.Join(exeDir, "db", "easyinput.db")
+	dbPath := filepath.Join(exeDir, "db", "typebridge.db")
 	if err := database.Init(dbPath); err != nil {
 		fmt.Printf("警告：初始化数据库失败 %v\n", err)
 	} else {

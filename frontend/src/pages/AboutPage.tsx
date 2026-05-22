@@ -30,7 +30,7 @@ export default function AboutPage() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle className="text-lg">EasyInput</CardTitle>
+                <CardTitle className="text-lg">Type Bridge</CardTitle>
                 <CardDescription>手机电脑输入同步工具</CardDescription>
               </div>
               <Badge variant="info" className="text-sm">v{version}</Badge>
@@ -38,7 +38,7 @@ export default function AboutPage() {
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              EasyInput 让你通过手机浏览器远程控制电脑输入。
+              Type Bridge 让你通过手机浏览器远程控制电脑输入。
               连接同一 WiFi 后，手机扫描二维码即可访问控制页面，
               实现文本发送、回车、撤销、光标移动等操作。
             </p>
@@ -79,7 +79,7 @@ export default function AboutPage() {
           </CardHeader>
           <CardContent className="space-y-2">
             <a
-              href="https://github.com/veryinf/easy-input"
+              href="https://github.com/veryinf/type-bridge"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-3 p-3 rounded-lg border border-border hover:bg-accent transition-colors"
@@ -87,12 +87,12 @@ export default function AboutPage() {
               <ExternalLink className="h-4 w-4 text-foreground" />
               <div className="flex-1">
                 <p className="text-sm font-medium">GitHub 仓库</p>
-                <p className="text-xs text-muted-foreground">veryinf/easy-input</p>
+                <p className="text-xs text-muted-foreground">veryinf/type-bridge</p>
               </div>
               <ExternalLink className="h-3.5 w-3.5 text-muted-foreground" />
             </a>
             <a
-              href="https://github.com/veryinf/easy-input/releases"
+              href="https://github.com/veryinf/type-bridge/releases"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-3 p-3 rounded-lg border border-border hover:bg-accent transition-colors"

@@ -150,7 +150,7 @@ func insertDefaultLayout() error {
 
 	_, err := db.Exec(
 		"INSERT INTO console_layouts (name, description, author, help_text, is_default, config) VALUES (?, ?, ?, ?, 1, ?)",
-		"默认布局", "EasyInput 默认控制台布局", "EasyInput", defaultHelp, defaultConfig,
+		"默认布局", "Type Bridge 默认控制台布局", "Type Bridge", defaultHelp, defaultConfig,
 	)
 	return err
 }

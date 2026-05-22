@@ -1,4 +1,4 @@
-# EasyInput - 手机电脑输入同步工具
+# Type Bridge - 手机电脑输入同步工具
 
 > 📱 手机扫码，电脑打字 - 让手机成为电脑的无线键盘
 
@@ -14,15 +14,15 @@
 
 ## 📥 下载安装
 
-1. 从 [Releases](https://github.com/yourusername/easy-input/releases) 页面下载最新版本
+1. 从 [Releases](https://github.com/yourusername/type-bridge/releases) 页面下载最新版本
 2. 解压到任意目录
-3. 运行 `EasyInput.exe`
+3. 运行 `TypeBridge.exe`
 
 ## 🚀 快速使用
 
 ### 第一步：启动程序
 
-双击运行 `EasyInput.exe`，程序会显示一个二维码和访问地址。
+双击运行 `TypeBridge.exe`，程序会显示一个二维码和访问地址。
 
 ### 第二步：手机连接
 
@@ -154,7 +154,7 @@ A:
 ## 📞 获取帮助
 
 - 查看程序内的"帮助"按钮（右下角的 `?` 图标）
-- 在 GitHub 提交 Issue：[项目地址](https://github.com/yourusername/easy-input/issues)
+- 在 GitHub 提交 Issue：[项目地址](https://github.com/yourusername/type-bridge/issues)
 
 ## 📄 许可证
 
@@ -162,6 +162,6 @@ A:
 
 ---
 
-**感谢使用 EasyInput！** 🎉
+**感谢使用 Type Bridge！** 🎉
 
 如果觉得好用，请给项目点个 ⭐ Star 支持一下！

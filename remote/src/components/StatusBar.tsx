@@ -42,7 +42,7 @@ export default function StatusBar({ version = "0.0.6", onHelp }: StatusBarProps)
         </span>
       </div>
       <div className="status-center">
-        <span className="app-title">EasyInput</span>
+        <span className="app-title">Type Bridge</span>
         {onHelp && (
           <button className="help-btn" onClick={onHelp} title="帮助">?</button>
         )}

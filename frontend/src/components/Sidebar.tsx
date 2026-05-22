@@ -48,7 +48,7 @@ export default function Sidebar() {
             <span className="text-primary font-bold text-sm">EI</span>
           </div>
           <div>
-            <h1 className="text-sm font-semibold text-foreground">EasyInput</h1>
+            <h1 className="text-sm font-semibold text-foreground">Type Bridge</h1>
             <p className="text-[10px] text-muted-foreground">手机电脑输入同步</p>
           </div>
         </div>
@@ -84,7 +84,7 @@ export default function Sidebar() {
             </TooltipContent>
           </Tooltip>
           <p className="text-[10px] text-muted-foreground text-center">
-            veryinf/easy-input
+            veryinf/type-bridge
           </p>
         </div>
       </aside>
