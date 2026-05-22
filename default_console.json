@@ -1,5 +1,5 @@
 {
-  "help_text": "## 基本操作\n- **发送** - 将文本发送到电脑（应用替换规则）\n- **回车** - 发送回车键\n- **提交** - 发送文本 + 回车\n- **清空** - 清空输入框\n\n## 快捷操作\n- **光标移动** - 控制电脑光标方向\n- **删除** - 删除电脑上的字符\n- **撤销** - 撤销上一次发送\n- **上次** - 重新发送上一次内容\n\n## 使用提示\n- 确保手机和电脑在同一局域网\n- 文本会通过剪贴板粘贴到电脑当前焦点\n- 支持正则替换规则（在 hot-rule.txt 配置）",
+  "help_text": "## 基本操作\n- **发送** - 将文本发送到电脑（应用替换规则）\n- **回车** - 发送回车键\n- **提交** - 发送文本 + 回车\n- **清空** - 清空输入框\n\n## 快捷操作\n- **光标移动** - 控制电脑光标方向\n- **删除** - 删除电脑上的字符\n- **撤销** - 撤销上一次发送\n- **上次** - 重新发送上一次内容\n\n## 使用提示\n- 确保手机和电脑在同一局域网\n- 文本会通过剪贴板粘贴到电脑当前焦点\n- 支持正则替换规则（在控制台配置中管理）",
   "gridColumns": 4,
   "inputButtons": [
     {"id": "send", "label": "发送", "style": "send", "commands": [{"action": "text", "text": "{{input}}", "applyRules": true}]},
@@ -22,5 +22,13 @@
     {"id": "symbol2", "label": "\"\"", "style": "symbol", "clientAction": "symbol", "params": "\""},
     {"id": "symbol3", "label": "「」", "style": "symbol", "clientAction": "symbol", "params": "「」"},
     {"id": "symbol4", "label": "[]", "style": "symbol", "clientAction": "symbol", "params": "[]"}
+  ],
+  "rules": [
+    {"pattern": "毫安时", "replacement": "mAh", "enabled": true},
+    {"pattern": "赫兹", "replacement": "Hz", "enabled": true},
+    {"pattern": "伏特", "replacement": "V", "enabled": true},
+    {"pattern": "(艾特)\\s*(QQ)\\s*点", "replacement": "@qq.", "enabled": true},
+    {"pattern": "(艾特)\\s*([一幺]六三)\\s*点", "replacement": "@163.", "enabled": true},
+    {"pattern": "(艾特)\\s*(\\w+)\\s*(点)\\s*(\\w+)", "replacement": "@\\2.\\4", "enabled": true}
   ]
 }

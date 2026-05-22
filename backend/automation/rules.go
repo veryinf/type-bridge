@@ -1,47 +1,38 @@
 package automation
 
 import (
-	"os"
 	"regexp"
-	"strings"
 )
 
+// Rule 编译后的替换规则
 type Rule struct {
 	Pattern    *regexp.Regexp
 	ReplaceStr string
 }
 
+// RuleConfig JSON 序列化的规则配置
+type RuleConfig struct {
+	Pattern     string `json:"pattern"`
+	Replacement string `json:"replacement"`
+	Enabled     bool   `json:"enabled"`
+}
+
 var Rules []Rule
 
-func LoadRules(ruleFilePath string) error {
-	data, err := os.ReadFile(ruleFilePath)
-	if err != nil {
-		return err
-	}
-
-	lines := strings.Split(string(data), "\n")
-	for _, line := range lines {
-		line = strings.TrimSpace(line)
-		if line == "" || strings.HasPrefix(line, "#") {
+// LoadRulesFromConfig 从配置列表加载替换规则
+func LoadRulesFromConfig(configs []RuleConfig) error {
+	Rules = nil
+	for _, cfg := range configs {
+		if !cfg.Enabled {
 			continue
 		}
-
-		parts := strings.SplitN(line, "=", 2)
-		if len(parts) != 2 {
-			continue
-		}
-
-		patternStr := strings.TrimSpace(parts[0])
-		replaceStr := strings.TrimSpace(parts[1])
-
-		pattern, err := regexp.Compile(patternStr)
+		pattern, err := regexp.Compile(cfg.Pattern)
 		if err != nil {
 			continue
 		}
-
 		Rules = append(Rules, Rule{
 			Pattern:    pattern,
-			ReplaceStr: replaceStr,
+			ReplaceStr: cfg.Replacement,
 		})
 	}
 	return nil

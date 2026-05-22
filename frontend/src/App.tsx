@@ -2,7 +2,6 @@ import { Route, Switch } from "wouter";
 import Sidebar from "./components/Sidebar";
 import HomePage from "./pages/HomePage";
 import LogPage from "./pages/LogPage";
-import RulesPage from "./pages/RulesPage";
 import SettingsPage from "./pages/SettingsPage";
 import AboutPage from "./pages/AboutPage";
 
@@ -14,7 +13,6 @@ function App() {
         <Switch>
           <Route path="/" component={HomePage} />
           <Route path="/logs" component={LogPage} />
-          <Route path="/rules" component={RulesPage} />
           <Route path="/settings" component={SettingsPage} />
           <Route path="/about" component={AboutPage} />
           <Route>

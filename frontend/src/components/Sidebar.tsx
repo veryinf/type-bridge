@@ -1,5 +1,5 @@
 import { Link, useRoute } from "wouter";
-import { Home, ListChecks, Settings, Info, ScrollText, Sun, Moon } from "lucide-react";
+import { Home, Settings, Info, ScrollText, Sun, Moon } from "lucide-react";
 import { cn } from "../lib/utils";
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "./ui/tooltip";
 import { useTheme } from "../hooks/useTheme";
@@ -7,7 +7,6 @@ import { useTheme } from "../hooks/useTheme";
 const navItems = [
   { href: "/", icon: Home, label: "主页" },
   { href: "/logs", icon: ScrollText, label: "操作日志" },
-  { href: "/rules", icon: ListChecks, label: "规则管理" },
   { href: "/settings", icon: Settings, label: "设置" },
   { href: "/about", icon: Info, label: "关于" },
 ];

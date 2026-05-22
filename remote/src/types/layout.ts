@@ -25,6 +25,13 @@ export interface LayoutConfig {
   gridColumns?: number;
 }
 
+export interface RuleConfig {
+  pattern: string;
+  replacement: string;
+  enabled: boolean;
+}
+
 export interface ConsoleConfig extends LayoutConfig {
   help_text: string;
+  rules: RuleConfig[];
 }

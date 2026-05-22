@@ -27,7 +27,6 @@ var (
 	CurrentVersion = "0.0.6"
 	GitHubRepo    = "veryinf/easy-input"
 	Port          = 5000
-	RuleFilePath  = "hot-rule.txt"
 )
 
 type App struct {
@@ -61,11 +60,12 @@ var lastOperation struct {
 
 // ConsoleConfig 控制台配置（从 default_console.json 加载）
 type ConsoleConfig struct {
-	HelpText           string         `json:"help_text"`
-	GridColumns        int            `json:"gridColumns"`
-	InputButtons       []ButtonConfig `json:"inputButtons"`
-	ActionButtons      []ButtonConfig `json:"actionButtons"`
-	ExtraActionButtons []ButtonConfig `json:"extraActionButtons"`
+	HelpText           string               `json:"help_text"`
+	GridColumns        int                  `json:"gridColumns"`
+	InputButtons       []ButtonConfig       `json:"inputButtons"`
+	ActionButtons      []ButtonConfig       `json:"actionButtons"`
+	ExtraActionButtons []ButtonConfig       `json:"extraActionButtons"`
+	Rules              []automation.RuleConfig `json:"rules"`
 }
 
 // ButtonConfig 按钮配置
@@ -101,17 +101,17 @@ func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
 
 	exeDir := getExecDir()
-	ruleFile := filepath.Join(exeDir, RuleFilePath)
-
-	if err := automation.LoadRules(ruleFile); err != nil {
-		fmt.Printf("警告：加载规则文件失败 %v\n", err)
-	}
 
 	// 加载控制台配置
 	if err := a.loadConsoleConfig(); err != nil {
 		fmt.Printf("警告：加载控制台配置失败 %v\n", err)
 	} else {
 		fmt.Println("控制台配置加载成功")
+	}
+
+	// 从控制台配置加载替换规则
+	if err := automation.LoadRulesFromConfig(consoleConfig.Rules); err != nil {
+		fmt.Printf("警告：加载替换规则失败 %v\n", err)
 	}
 
 	// 初始化数据库
@@ -516,6 +516,8 @@ func saveConsoleConfig(config *ConsoleConfig) error {
 	consoleMu.Lock()
 	consoleConfig = *config
 	consoleMu.Unlock()
+
+	automation.LoadRulesFromConfig(config.Rules)
 	return nil
 }
 
