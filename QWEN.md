@@ -45,7 +45,7 @@ easy-input/
 │   │   └── rules.go           # 正则替换规则引擎
 │   └── server/
 │       └── handler.go         # 独立 HTTP 处理器、版本更新检查
-├── control/                   # 管理界面（Wails 桌面端）
+├── frontend/                  # 管理界面（Wails 桌面端）
 │   ├── src/
 │   │   ├── main.tsx           # React 入口
 │   │   ├── App.tsx            # 路由配置
@@ -64,7 +64,6 @@ easy-input/
 │   ├── package.json
 │   ├── vite.config.ts         # 开发端口 3010
 │   └── tsconfig.json
-├── frontend/                  # → junction 链接指向 control/（Wails 兼容）
 ├── remote/                    # 手机端远程操作界面
 │   ├── src/
 │   │   ├── main.tsx           # React 入口
@@ -117,7 +116,7 @@ wails build
 
 ```bash
 # 管理界面（桌面端）
-cd control
+cd frontend
 pnpm install
 pnpm run dev      # 开发服务器，端口 3010
 pnpm run build    # TypeScript 编译 + Vite 构建
@@ -143,9 +142,8 @@ pnpm run build    # TypeScript 编译 + Vite 构建
 ### 关键组件
 
 - **`app.go`**：包含 Wails 绑定方法（`SendText`, `SendEnter`, `Undo` 等）和内嵌的 HTTP 服务器，通过 `embed.FS` 嵌入 `remote/dist` 静态文件
-- **`control/`**：管理界面，Wails 桌面端前端，通过 `embed.FS` 嵌入到 Go 二进制
+- **`frontend/`**：管理界面，Wails 桌面端前端，通过 `embed.FS` 嵌入到 Go 二进制
 - **`remote/`**：手机端远程操作界面，构建产物通过 `embed.FS` 嵌入，由 HTTP 服务器提供给手机浏览器访问
-- **`frontend/`**：Windows junction 链接，指向 `control/`，保持 Wails 自动检测兼容
 - **`backend/automation/rules.go`**：正则替换规则引擎，从 `hot-rule.txt` 加载 `pattern=replace` 格式的规则
 - **`backend/automation/keyboard.go`**：封装 robotgo 的键盘操作，包括粘贴（通过剪贴板）、按键、撤销等
 - **`backend/server/handler.go`**：独立的 HTTP 处理器实现，包含版本更新检查功能
@@ -168,7 +166,7 @@ pnpm run build    # TypeScript 编译 + Vite 构建
 ## 开发约定
 
 - **语言**：后端 Go，前端 TypeScript + React
-- **项目分为三部分**：Go 后端、`control/` 管理界面（Wails 桌面端）、`remote/` 手机端远程界面
+- **项目分为三部分**：Go 后端、`frontend/` 管理界面（Wails 桌面端）、`remote/` 手机端远程界面
 - **代码风格**：Go 遵循标准 `gofmt` 格式；前端使用 Tailwind CSS + 自定义 CSS
 - **组件命名**：React 组件使用 PascalCase，文件名与组件名一致
 - **包管理**：前端使用 pnpm

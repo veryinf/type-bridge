@@ -41,23 +41,15 @@ export default function SymbolModal({
   };
 
   return (
-    <div
-      className="fixed inset-0 bg-black/50 flex justify-center items-center z-[1000]"
-      onClick={handleBackdropClick}
-    >
-      <div className="w-[90%] max-w-[400px] bg-white p-5 rounded-2xl flex flex-col gap-4">
+    <div className="modal-overlay" onClick={handleBackdropClick}>
+      <div className="modal-content">
         <input
           ref={inputRef}
           type="text"
           onKeyDown={handleKeyDown}
           placeholder="请输入内容..."
-          className="w-full p-3.5 text-base border-2 border-[var(--color-primary)] rounded-lg focus:outline-none focus:border-[var(--color-primary-dark)]"
         />
-        <button
-          onClick={handleConfirm}
-          className="p-3 text-base text-white border-none rounded-lg cursor-pointer active:opacity-80"
-          style={{ backgroundColor: "var(--color-primary)" }}
-        >
+        <button className="modal-confirm" onClick={handleConfirm}>
           确认
         </button>
       </div>

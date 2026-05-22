@@ -5,17 +5,18 @@ import (
 	"embed"
 	"encoding/json"
 	"fmt"
-	"io"
 	"io/fs"
 	"net/http"
 	"os"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/veryinf/easy-input/backend/automation"
+	"github.com/veryinf/easy-input/backend/database"
 	wailsRuntime "github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
@@ -31,6 +32,20 @@ var (
 
 type App struct {
 	ctx context.Context
+}
+
+type Command struct {
+	Action     string   `json:"action"`
+	Text       string   `json:"text,omitempty"`
+	Key        string   `json:"key,omitempty"`
+	Keys       []string `json:"keys,omitempty"`
+	ApplyRules bool     `json:"applyRules,omitempty"`
+	Delay      int      `json:"ms,omitempty"`
+	Count      int      `json:"count,omitempty"`
+}
+
+type ExecuteRequest struct {
+	Commands []Command `json:"commands"`
 }
 
 type UndoResponse struct {
@@ -65,6 +80,14 @@ func (a *App) startup(ctx context.Context) {
 
 	if err := automation.LoadRules(ruleFile); err != nil {
 		fmt.Printf("警告：加载规则文件失败 %v\n", err)
+	}
+
+	// 初始化数据库
+	dbPath := filepath.Join(exeDir, "db", "easyinput.db")
+	if err := database.Init(dbPath); err != nil {
+		fmt.Printf("警告：初始化数据库失败 %v\n", err)
+	} else {
+		fmt.Println("数据库初始化成功")
 	}
 
 	go StartServer(Port)
@@ -188,110 +211,83 @@ func StartServer(port int) {
 		fileServer.ServeHTTP(w, r)
 	})
 	mux.Handle("/", fileServer)
-	mux.HandleFunc("/send", sendHandler)
-	mux.HandleFunc("/send_enter", sendEnterHandler)
-	mux.HandleFunc("/undo", undoHandler)
-	mux.HandleFunc("/move_cursor", moveCursorHandler)
-	mux.HandleFunc("/delete_pc", deletePCHandler)
-	mux.HandleFunc("/logs", logsHandler)
+	mux.HandleFunc("/api/v1/execute", executeHandler)
+	mux.HandleFunc("/api/v1/logs", logsHandler)
+
+	// 模板 API
+	mux.HandleFunc("/api/v1/templates", templatesHandler)
+	mux.HandleFunc("/api/v1/templates/", templateHandler)
+
+	// 布局 API
+	mux.HandleFunc("/api/v1/layouts", layoutsHandler)
+	mux.HandleFunc("/api/v1/layouts/", layoutHandler)
 
 	addr := fmt.Sprintf(":%d", port)
 	fmt.Printf("手机访问地址：http://localhost%s/mobile.html\n", addr)
 	http.ListenAndServe(addr, mux)
 }
 
-func sendHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		return
-	}
-	var data struct {
-		Text string `json:"text"`
-	}
-	body, _ := io.ReadAll(r.Body)
-	json.Unmarshal(body, &data)
-
-	text := trimSpace(data.Text)
-	if text != "" {
-		lastOperation.Type = "text"
-		lastOperation.Content = text
-		replacedText := automation.ApplyRules(text)
-		automation.PasteText(replacedText)
-		addLog("text", fmt.Sprintf("发送文本: %s", text))
-		fmt.Printf("原始文本：%s → 替换后：%s\n", text, replacedText)
-	}
-
-	jsonResp(w, "success", "")
-}
-
-func sendEnterHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		return
-	}
-	lastOperation.Type = "enter"
-	lastOperation.Content = ""
-	automation.KeyTap("ENTER")
-	addLog("enter", "发送回车")
-	fmt.Println("执行回车操作，已记录历史")
-	jsonResp(w, "success", "")
-}
-
-func undoHandler(w http.ResponseWriter, r *http.Request) {
+func executeHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		return
 	}
 
-	if lastOperation.Type == "" {
-		jsonResp(w, "failed", "无历史操作可撤销")
+	var req ExecuteRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		jsonResp(w, "failed", "请求格式错误")
 		return
 	}
 
-	recoverContent := lastOperation.Content
+	for _, cmd := range req.Commands {
+		switch cmd.Action {
+		case "text":
+			text := cmd.Text
+			if text == "" {
+				continue
+			}
+			if cmd.ApplyRules {
+				text = automation.ApplyRules(text)
+			}
+			lastOperation.Type = "text"
+			lastOperation.Content = cmd.Text
+			automation.PasteText(text)
+			addLog("text", fmt.Sprintf("发送文本: %s", cmd.Text))
 
-	if lastOperation.Type == "text" {
-		replacedLen := len(automation.ApplyRules(lastOperation.Content))
-		automation.UndoText(replacedLen)
-	} else if lastOperation.Type == "enter" {
-		automation.UndoEnter()
+		case "key":
+			if cmd.Key == "" {
+				continue
+			}
+			automation.KeyTap(cmd.Key)
+			addLog("key", fmt.Sprintf("按键: %s", cmd.Key))
+
+		case "combo":
+			if len(cmd.Keys) == 0 {
+				continue
+			}
+			automation.KeyCombo(cmd.Keys...)
+			addLog("combo", fmt.Sprintf("组合键: %v", cmd.Keys))
+
+		case "delay":
+			if cmd.Delay > 0 {
+				automation.Delay(cmd.Delay)
+			}
+
+		case "undo":
+			if lastOperation.Type == "" {
+				continue
+			}
+			if lastOperation.Type == "text" {
+				replacedLen := len(automation.ApplyRules(lastOperation.Content))
+				automation.UndoText(replacedLen)
+			} else if lastOperation.Type == "enter" {
+				automation.UndoEnter()
+			}
+			addLog("undo", "撤销操作")
+			lastOperation.Type = ""
+			lastOperation.Content = ""
+		}
 	}
 
-	addLog("undo", "撤销操作")
-	lastOperation.Type = ""
-	lastOperation.Content = ""
-
-	jsonRespWithContent(w, "success", "", recoverContent)
-}
-
-func moveCursorHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		return
-	}
-
-	var data struct {
-		Direction string `json:"direction"`
-	}
-	body, _ := io.ReadAll(r.Body)
-	json.Unmarshal(body, &data)
-
-	direction := data.Direction
-	if direction == "left" || direction == "up" || direction == "down" || direction == "right" {
-		automation.KeyTap(strings.ToUpper(direction))
-		addLog("cursor", fmt.Sprintf("光标移动: %s", direction))
-		fmt.Printf("执行光标移动：%s\n", direction)
-	}
-
-	jsonResp(w, "success", "")
-}
-
-func deletePCHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		return
-	}
-
-	lastOperation.Type = "delete"
-	lastOperation.Content = ""
-	automation.KeyTap("BACKSPACE")
-	addLog("delete", "删除")
-	fmt.Println("执行PC端删除操作")
 	jsonResp(w, "success", "")
 }
 
@@ -325,6 +321,213 @@ func jsonResp(w http.ResponseWriter, status, msg string) {
 func jsonRespWithContent(w http.ResponseWriter, status, msg, content string) {
 	w.Header().Set("Content-Type", "application/json")
 	fmt.Fprintf(w, `{"status":"%s","msg":"%s","content":"%s"}`, status, msg, content)
+}
+
+// templatesHandler 处理 /api/v1/templates
+func templatesHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	switch r.Method {
+	case http.MethodGet:
+		templates, err := database.GetAllTemplates()
+		if err != nil {
+			jsonResp(w, "failed", err.Error())
+			return
+		}
+		json.NewEncoder(w).Encode(templates)
+
+	case http.MethodPost:
+		var req struct {
+			Name    string `json:"name"`
+			Content string `json:"content"`
+			Type    string `json:"type"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			jsonResp(w, "failed", "请求格式错误")
+			return
+		}
+		if req.Name == "" || req.Content == "" {
+			jsonResp(w, "failed", "名称和内容不能为空")
+			return
+		}
+		if req.Type == "" {
+			req.Type = "text"
+		}
+		template, err := database.CreateTemplate(req.Name, req.Content, req.Type)
+		if err != nil {
+			jsonResp(w, "failed", err.Error())
+			return
+		}
+		json.NewEncoder(w).Encode(template)
+
+	default:
+		jsonResp(w, "failed", "不支持的请求方法")
+	}
+}
+
+// templateHandler 处理 /api/v1/templates/{id}
+func templateHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	// 提取 ID
+	path := r.URL.Path
+	prefix := "/api/v1/templates/"
+	if !strings.HasPrefix(path, prefix) {
+		jsonResp(w, "failed", "无效的路径")
+		return
+	}
+	idStr := strings.TrimPrefix(path, prefix)
+	idStr = strings.TrimSuffix(idStr, "/")
+	if idStr == "" {
+		jsonResp(w, "failed", "缺少模板ID")
+		return
+	}
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		jsonResp(w, "failed", "无效的模板ID")
+		return
+	}
+
+	switch r.Method {
+	case http.MethodGet:
+		template, err := database.GetTemplateByID(id)
+		if err != nil {
+			jsonResp(w, "failed", "模板不存在")
+			return
+		}
+		json.NewEncoder(w).Encode(template)
+
+	case http.MethodPut:
+		var req struct {
+			Name    string `json:"name"`
+			Content string `json:"content"`
+			Type    string `json:"type"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			jsonResp(w, "failed", "请求格式错误")
+			return
+		}
+		if err := database.UpdateTemplate(id, req.Name, req.Content, req.Type); err != nil {
+			jsonResp(w, "failed", err.Error())
+			return
+		}
+		jsonResp(w, "success", "")
+
+	case http.MethodDelete:
+		if err := database.DeleteTemplate(id); err != nil {
+			jsonResp(w, "failed", err.Error())
+			return
+		}
+		jsonResp(w, "success", "")
+
+	default:
+		jsonResp(w, "failed", "不支持的请求方法")
+	}
+}
+
+// layoutsHandler 处理 /api/v1/layouts
+func layoutsHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	switch r.Method {
+	case http.MethodGet:
+		layouts, err := database.GetAllLayouts()
+		if err != nil {
+			jsonResp(w, "failed", err.Error())
+			return
+		}
+		json.NewEncoder(w).Encode(layouts)
+
+	case http.MethodPost:
+		var req struct {
+			Name        string `json:"name"`
+			Description string `json:"description"`
+			Author      string `json:"author"`
+			HelpText    string `json:"help_text"`
+			Config      string `json:"config"`
+			IsDefault   bool   `json:"is_default"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			jsonResp(w, "failed", "请求格式错误")
+			return
+		}
+		if req.Name == "" || req.Config == "" {
+			jsonResp(w, "failed", "名称和配置不能为空")
+			return
+		}
+		layout, err := database.CreateLayout(req.Name, req.Description, req.Author, req.HelpText, req.Config, req.IsDefault)
+		if err != nil {
+			jsonResp(w, "failed", err.Error())
+			return
+		}
+		json.NewEncoder(w).Encode(layout)
+
+	default:
+		jsonResp(w, "failed", "不支持的请求方法")
+	}
+}
+
+// layoutHandler 处理 /api/v1/layouts/{id}
+func layoutHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	// 提取 ID
+	path := r.URL.Path
+	prefix := "/api/v1/layouts/"
+	if !strings.HasPrefix(path, prefix) {
+		jsonResp(w, "failed", "无效的路径")
+		return
+	}
+	idStr := strings.TrimPrefix(path, prefix)
+	idStr = strings.TrimSuffix(idStr, "/")
+	if idStr == "" {
+		jsonResp(w, "failed", "缺少布局ID")
+		return
+	}
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		jsonResp(w, "failed", "无效的布局ID")
+		return
+	}
+
+	switch r.Method {
+	case http.MethodGet:
+		layout, err := database.GetLayoutByID(id)
+		if err != nil {
+			jsonResp(w, "failed", "布局不存在")
+			return
+		}
+		json.NewEncoder(w).Encode(layout)
+
+	case http.MethodPut:
+		var req struct {
+			Name        string `json:"name"`
+			Description string `json:"description"`
+			Author      string `json:"author"`
+			HelpText    string `json:"help_text"`
+			Config      string `json:"config"`
+			IsDefault   bool   `json:"is_default"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			jsonResp(w, "failed", "请求格式错误")
+			return
+		}
+		if err := database.UpdateLayout(id, req.Name, req.Description, req.Author, req.HelpText, req.Config, req.IsDefault); err != nil {
+			jsonResp(w, "failed", err.Error())
+			return
+		}
+		jsonResp(w, "success", "")
+
+	case http.MethodDelete:
+		if err := database.DeleteLayout(id); err != nil {
+			jsonResp(w, "failed", err.Error())
+			return
+		}
+		jsonResp(w, "success", "")
+
+	default:
+		jsonResp(w, "failed", "不支持的请求方法")
+	}
 }
 
 func trimSpace(s string) string {

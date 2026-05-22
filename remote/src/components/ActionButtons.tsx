@@ -1,53 +1,68 @@
+import { ButtonConfig } from "../types/layout";
+
 interface ActionButtonsProps {
-  hasHistory: boolean;
-  onSend: () => void;
-  onEnter: () => void;
-  onUndo: () => void;
-  onClear: () => void;
+  buttons?: ButtonConfig[];
+  extraButtons?: ButtonConfig[];
+  gridColumns?: number;
+  hasHistory?: boolean;
+  onButtonClick: (button: ButtonConfig) => void;
 }
 
+const DEFAULT_BUTTONS: ButtonConfig[] = [
+  { id: "left", label: "←", style: "cursor", commands: [{ action: "key", key: "left" }] },
+  { id: "up", label: "↑", style: "cursor", commands: [{ action: "key", key: "up" }] },
+  { id: "down", label: "↓", style: "cursor", commands: [{ action: "key", key: "down" }] },
+  { id: "right", label: "→", style: "cursor", commands: [{ action: "key", key: "right" }] },
+  { id: "delete", label: "删除", style: "delete", commands: [{ action: "key", key: "backspace" }] },
+  { id: "undo", label: "撤销", style: "undo", commands: [{ action: "undo" }] },
+  { id: "resend", label: "上次", style: "resend", clientAction: "resend" },
+  { id: "symbol1", label: "（）", style: "symbol", clientAction: "symbol", params: "()" },
+];
+
+const DEFAULT_EXTRA: ButtonConfig[] = [
+  { id: "symbol2", label: '""', style: "symbol", clientAction: "symbol", params: '""' },
+  { id: "symbol3", label: "「」", style: "symbol", clientAction: "symbol", params: "「」" },
+  { id: "symbol4", label: "[]", style: "symbol", clientAction: "symbol", params: "[]" },
+];
+
 export default function ActionButtons({
-  hasHistory,
-  onSend,
-  onEnter,
-  onUndo,
-  onClear,
+  buttons = DEFAULT_BUTTONS,
+  extraButtons = DEFAULT_EXTRA,
+  gridColumns = 4,
+  hasHistory = false,
+  onButtonClick,
 }: ActionButtonsProps) {
+  const isDisabled = (btn: ButtonConfig) => {
+    return btn.id === "undo" && !hasHistory;
+  };
+
   return (
-    <div className="w-full flex gap-2">
-      <button
-        onClick={onSend}
-        className="flex-1 py-3 px-2 rounded-lg text-white text-[15px] font-medium active:opacity-80 active:scale-[0.96] transition-all"
-        style={{ backgroundColor: "var(--color-primary)" }}
-      >
-        发送
-      </button>
-      <button
-        onClick={onEnter}
-        className="flex-1 py-3 px-2 rounded-lg text-white text-[15px] font-medium active:opacity-80 active:scale-[0.96] transition-all"
-        style={{ backgroundColor: "var(--color-enter)" }}
-      >
-        回车
-      </button>
-      <button
-        onClick={onUndo}
-        disabled={!hasHistory}
-        className="flex-1 py-3 px-2 rounded-lg text-white text-[15px] font-medium active:opacity-80 active:scale-[0.96] transition-all disabled:opacity-60 disabled:cursor-not-allowed"
-        style={{
-          backgroundColor: hasHistory
-            ? "var(--color-undo-active)"
-            : "var(--color-undo)",
-        }}
-      >
-        撤销
-      </button>
-      <button
-        onClick={onClear}
-        className="flex-1 py-3 px-2 rounded-lg text-white text-[15px] font-medium active:opacity-80 active:scale-[0.96] transition-all"
-        style={{ backgroundColor: "var(--color-clear)" }}
-      >
-        清空
-      </button>
+    <div className="action-card">
+      <div className="card-grid" style={{ gridTemplateColumns: `repeat(${gridColumns}, 1fr)` }}>
+        {buttons.map((btn) => (
+          <button
+            key={btn.id}
+            className={`card-btn ${btn.style} ${btn.id === "undo" && hasHistory ? "active" : ""}`}
+            onClick={() => onButtonClick(btn)}
+            disabled={isDisabled(btn)}
+          >
+            {btn.label}
+          </button>
+        ))}
+      </div>
+      {extraButtons && extraButtons.length > 0 && (
+        <div className="card-grid" style={{ gridTemplateColumns: `repeat(${gridColumns}, 1fr)` }}>
+          {extraButtons.map((btn) => (
+            <button
+              key={btn.id}
+              className={`card-btn ${btn.style}`}
+              onClick={() => onButtonClick(btn)}
+            >
+              {btn.label}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

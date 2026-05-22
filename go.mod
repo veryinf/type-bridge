@@ -5,6 +5,7 @@ go 1.24.0
 require (
 	github.com/getlantern/systray v1.2.2
 	github.com/go-vgo/robotgo v1.0.0
+	github.com/mattn/go-sqlite3 v1.14.44
 	github.com/wailsapp/wails/v2 v2.12.0
 )
 

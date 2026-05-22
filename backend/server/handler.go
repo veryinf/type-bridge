@@ -38,11 +38,11 @@ func Start(port int, remoteFS fs.FS) error {
 		fileServer.ServeHTTP(w, r)
 	})
 	mux.Handle("/", fileServer)
-	mux.HandleFunc("/send", sendHandler)
-	mux.HandleFunc("/send_enter", sendEnterHandler)
-	mux.HandleFunc("/undo", undoHandler)
-	mux.HandleFunc("/move_cursor", moveCursorHandler)
-	mux.HandleFunc("/delete_pc", deletePCHandler)
+	mux.HandleFunc("/api/v1/send", sendHandler)
+	mux.HandleFunc("/api/v1/send_enter", sendEnterHandler)
+	mux.HandleFunc("/api/v1/undo", undoHandler)
+	mux.HandleFunc("/api/v1/move_cursor", moveCursorHandler)
+	mux.HandleFunc("/api/v1/delete_pc", deletePCHandler)
 
 	addr := fmt.Sprintf(":%d", port)
 	return http.ListenAndServe(addr, mux)
@@ -164,7 +164,7 @@ func CheckUpdate(currentVersion, repo string) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
-		fmt.Println("⚠️  更新检查失败：无法获取最新版本信息\n")
+		fmt.Println("⚠️  更新检查失败：无法获取最新版本信息")
 		return
 	}
 
@@ -177,7 +177,7 @@ func CheckUpdate(currentVersion, repo string) {
 	bodyText := extractJSON(bodyStr, "body")
 
 	if latestVersion == "" {
-		fmt.Println("⚠️  更新检查失败：无法解析版本信息\n")
+		fmt.Println("⚠️  更新检查失败：无法解析版本信息")
 		return
 	}
 
@@ -190,7 +190,7 @@ func CheckUpdate(currentVersion, repo string) {
 		fmt.Printf("📥 下载地址：%s\n", htmlUrl)
 		fmt.Printf("📝 更新日志：%s\n\n", bodyPreview)
 	} else {
-		fmt.Println("✅ 当前已是最新版本！\n")
+		fmt.Println("✅ 当前已是最新版本！")
 	}
 }
 

@@ -11,7 +11,7 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
 )
 
-//go:embed all:control/dist
+//go:embed all:frontend/dist
 var assets embed.FS
 
 var appInstance *App
@@ -26,8 +26,8 @@ func main() {
 
 	err := wails.Run(&options.App{
 		Title:  "EasyInput - 手机电脑输入同步",
-		Width:  480,
-		Height: 640,
+		Width:  1024,
+		Height: 700,
 		AssetServer: &assetserver.Options{
 			Assets: assets,
 		},
