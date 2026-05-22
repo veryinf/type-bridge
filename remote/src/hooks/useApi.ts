@@ -1,9 +1,12 @@
 import { useCallback } from "react";
 import { Command, ConsoleConfig } from "../types/layout";
+import { mockExecute, mockGetConsoleConfig } from "../mock";
 
 const BASE_URL = "/api/v1";
+const USE_MOCK = import.meta.env.VITE_MOCK_API !== "false";
 
 async function execute(commands: Command[]) {
+  if (USE_MOCK) return mockExecute(commands);
   const res = await fetch(`${BASE_URL}/execute`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -37,12 +40,8 @@ export function useApi() {
     return execute([{ action: "key", key: "backspace" }]);
   }, []);
 
-  const getTemplates = useCallback(async () => {
-    const res = await fetch(`${BASE_URL}/templates`);
-    return res.json();
-  }, []);
-
   const getConsoleConfig = useCallback(async (): Promise<ConsoleConfig> => {
+    if (USE_MOCK) return mockGetConsoleConfig();
     const res = await fetch(`${BASE_URL}/console`);
     return res.json();
   }, []);
@@ -55,7 +54,6 @@ export function useApi() {
     undo,
     moveCursor,
     deletePC,
-    getTemplates,
     getConsoleConfig,
   };
 }

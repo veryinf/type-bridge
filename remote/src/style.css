@@ -133,29 +133,6 @@ body {
   letter-spacing: 0.5px;
 }
 
-.help-btn {
-  width: 20px;
-  height: 20px;
-  border: 1.5px solid rgba(255, 255, 255, 0.8);
-  border-radius: 50%;
-  background: transparent;
-  color: rgba(255, 255, 255, 0.9);
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  margin-left: var(--spacing-sm);
-  transition: background 0.2s, border-color 0.2s;
-  vertical-align: middle;
-}
-
-.help-btn:hover {
-  background: rgba(255, 255, 255, 0.2);
-  border-color: white;
-}
-
 .status-right {
   display: flex;
   align-items: center;
@@ -259,7 +236,14 @@ body {
 
 .input-btns {
   display: flex;
+  flex-direction: column;
   gap: var(--spacing-xs);
+}
+
+.input-btn-row {
+  display: flex;
+  gap: var(--spacing-xs);
+  justify-content: center;
 }
 
 .input-btn {
@@ -297,6 +281,39 @@ body {
 
 .input-btn.clear {
   background: var(--color-clear);
+}
+
+.input-btn.history {
+  background: #607D8B;
+}
+
+.input-btn.icon {
+  flex: 0 0 auto;
+  border-radius: 50%;
+  font-size: 13px;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #78909C;
+}
+
+.input-btn.icon.expand {
+  background: var(--color-cursor);
+}
+
+.input-btn.icon.history {
+  background: #607D8B;
+}
+
+.input-btn.icon.fullscreen {
+  background: #546E7A;
+}
+
+.input-btn.icon.help {
+  background: #78909C;
 }
 
 /* Action Card - 遥控器卡片 */
@@ -664,101 +681,103 @@ body {
   font-weight: 500;
 }
 
-/* Templates Page */
-.templates-page {
-  padding-bottom: var(--spacing-2xl);
-}
-
-.template-list {
+/* History Modal */
+.history-modal {
+  max-width: 420px;
+  max-height: 80vh;
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-md);
 }
 
-.template-card {
-  background: var(--bg-secondary);
-  border-radius: var(--radius-md);
-  padding: var(--spacing-lg);
-  box-shadow: var(--shadow-sm);
-  cursor: pointer;
-  transition: transform 0.1s, box-shadow 0.2s;
-}
-
-.template-card:active {
-  transform: scale(0.98);
-  box-shadow: var(--shadow-md);
-}
-
-.template-header {
+.history-actions {
   display: flex;
   align-items: center;
   gap: var(--spacing-sm);
-  margin-bottom: var(--spacing-sm);
 }
 
-.template-icon {
-  font-size: 20px;
+.history-clear-btn {
+  padding: 2px 8px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--color-clear);
+  color: white;
+  font-size: 12px;
+  cursor: pointer;
+  transition: opacity 0.2s;
 }
 
-.template-name {
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--text-primary);
+.history-clear-btn:active {
+  opacity: 0.8;
 }
 
-.template-content {
+.history-list {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.history-empty {
+  text-align: center;
+  padding: var(--spacing-2xl) 0;
+  color: var(--text-tertiary);
   font-size: 14px;
-  color: var(--text-secondary);
-  line-height: 1.5;
-  word-break: break-all;
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
+}
+
+.history-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  background: var(--bg-primary);
+  border-radius: var(--radius-sm);
   overflow: hidden;
 }
 
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: var(--spacing-2xl) 0;
-  color: var(--text-tertiary);
-}
-
-.empty-icon {
-  font-size: 48px;
-  margin-bottom: var(--spacing-lg);
-}
-
-.empty-state p {
-  font-size: 16px;
-  margin-bottom: var(--spacing-xs);
-}
-
-.empty-hint {
-  font-size: 14px;
-  color: var(--text-tertiary);
-}
-
-.loading, .error {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: var(--spacing-2xl) 0;
-  color: var(--text-secondary);
-}
-
-.retry-btn {
-  margin-top: var(--spacing-md);
-  padding: var(--spacing-sm) var(--spacing-lg);
-  background: var(--color-primary);
-  color: white;
-  border: none;
-  border-radius: var(--radius-sm);
-  font-size: 14px;
+.history-item-content {
+  flex: 1;
+  min-width: 0;
+  padding: var(--spacing-sm) var(--spacing-md);
   cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.history-item-content:active {
+  background: var(--bg-tertiary);
+}
+
+.history-time {
+  font-size: 11px;
+  color: var(--text-tertiary);
+}
+
+.history-text {
+  font-size: 14px;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.history-delete-btn {
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  color: var(--text-tertiary);
+  font-size: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: color 0.2s;
+}
+
+.history-delete-btn:hover {
+  color: var(--color-clear);
 }
 
 /* Settings Page */

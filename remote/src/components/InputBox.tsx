@@ -17,8 +17,11 @@ const DEFAULT_BUTTONS: ButtonConfig[] = [
   { id: "send", label: "发送", style: "send", commands: [{ action: "text", text: "{{input}}", applyRules: true }] },
   { id: "enter", label: "回车", style: "enter", commands: [{ action: "key", key: "enter" }] },
   { id: "submit", label: "提交", style: "submit", commands: [{ action: "text", text: "{{input}}", applyRules: true }, { action: "key", key: "enter" }] },
-  { id: "expand", label: "更大", style: "expand", clientAction: "expand" },
   { id: "clear", label: "清空", style: "clear", clientAction: "clear" },
+  { id: "expand", label: "更大", style: "expand", icon: "⤢", clientAction: "expand" },
+  { id: "history", label: "历史", style: "history", icon: "📋", clientAction: "history" },
+  { id: "fullscreen", label: "全屏", style: "fullscreen", icon: "⛶", clientAction: "fullscreen" },
+  { id: "help", label: "帮助", style: "help", icon: "?", clientAction: "help" },
 ];
 
 const InputBox = forwardRef<InputBoxHandle, InputBoxProps>(
@@ -74,15 +77,36 @@ const InputBox = forwardRef<InputBoxHandle, InputBoxProps>(
           <span className="char-count">{charCount} 字</span>
         </div>
         <div className="input-btns">
-          {buttons.map((btn) => (
-            <button
-              key={btn.id}
-              className={`input-btn ${btn.style}`}
-              onClick={() => onButtonClick(btn)}
-            >
-              {btn.label}
-            </button>
-          ))}
+          {(() => {
+            const rows: ButtonConfig[][] = [];
+            for (let i = 0; i < buttons.length; i += 4) {
+              rows.push(buttons.slice(i, i + 4));
+            }
+            return rows.map((row, ri) => (
+              <div key={ri} className="input-btn-row">
+                {row.map((btn) =>
+                  btn.icon ? (
+                    <button
+                      key={btn.id}
+                      className={`input-btn icon ${btn.style}`}
+                      onClick={() => onButtonClick(btn)}
+                      title={btn.label}
+                    >
+                      {btn.icon}
+                    </button>
+                  ) : (
+                    <button
+                      key={btn.id}
+                      className={`input-btn ${btn.style}`}
+                      onClick={() => onButtonClick(btn)}
+                    >
+                      {btn.label}
+                    </button>
+                  )
+                )}
+              </div>
+            ));
+          })()}
         </div>
       </div>
     );

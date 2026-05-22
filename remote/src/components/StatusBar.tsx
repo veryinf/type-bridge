@@ -2,10 +2,9 @@ import { useState, useEffect } from "react";
 
 interface StatusBarProps {
   version?: string;
-  onHelp?: () => void;
 }
 
-export default function StatusBar({ version = "0.0.6", onHelp }: StatusBarProps) {
+export default function StatusBar({ version = "0.0.6" }: StatusBarProps) {
   const [isOnline, setIsOnline] = useState(true);
   const [currentTime, setCurrentTime] = useState(new Date());
 
@@ -43,9 +42,6 @@ export default function StatusBar({ version = "0.0.6", onHelp }: StatusBarProps)
       </div>
       <div className="status-center">
         <span className="app-title">Type Bridge</span>
-        {onHelp && (
-          <button className="help-btn" onClick={onHelp} title="帮助">?</button>
-        )}
       </div>
       <div className="status-right">
         <span className="version">v{version}</span>

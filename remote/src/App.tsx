@@ -1,32 +1,18 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import StatusBar from "./components/StatusBar";
 import BottomNav from "./components/BottomNav";
 import ConsolePage from "./pages/ConsolePage";
-import TemplatesPage from "./pages/TemplatesPage";
 import SettingsPage from "./pages/SettingsPage";
-import HelpModal from "./components/HelpModal";
-import { useApi } from "./hooks/useApi";
 
-type Tab = "console" | "templates" | "settings";
+type Tab = "console" | "settings";
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<Tab>("console");
-  const [isHelpOpen, setIsHelpOpen] = useState(false);
-  const [helpText, setHelpText] = useState<string | undefined>();
-  const { getConsoleConfig } = useApi();
-
-  useEffect(() => {
-    getConsoleConfig().then((config) => {
-      if (config) setHelpText(config.help_text);
-    });
-  }, [getConsoleConfig]);
 
   const renderPage = () => {
     switch (activeTab) {
       case "console":
         return <ConsolePage />;
-      case "templates":
-        return <TemplatesPage />;
       case "settings":
         return <SettingsPage />;
       default:
@@ -36,12 +22,11 @@ export default function App() {
 
   return (
     <div className="app-container">
-      <StatusBar onHelp={() => setIsHelpOpen(true)} />
+      <StatusBar />
       <main className="main-content">
         {renderPage()}
       </main>
       <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />
-      {isHelpOpen && <HelpModal helpText={helpText} onClose={() => setIsHelpOpen(false)} />}
     </div>
   );
 }

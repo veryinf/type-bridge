@@ -1,6 +1,4 @@
-import { useState } from "react";
-
-type Tab = "console" | "templates" | "settings";
+type Tab = "console" | "settings";
 
 interface BottomNavProps {
   activeTab: Tab;
@@ -9,7 +7,6 @@ interface BottomNavProps {
 
 const tabs: { key: Tab; label: string; icon: string }[] = [
   { key: "console", label: "控制台", icon: "⌨️" },
-  { key: "templates", label: "模板", icon: "📋" },
   { key: "settings", label: "设置", icon: "⚙️" },
 ];
 

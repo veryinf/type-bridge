@@ -7,12 +7,13 @@ export interface Command {
   ms?: number;
 }
 
-export type ClientAction = "expand" | "clear" | "resend" | "symbol";
+export type ClientAction = "expand" | "clear" | "resend" | "symbol" | "history" | "fullscreen" | "help";
 
 export interface ButtonConfig {
   id: string;
   label: string;
   style: string;
+  icon?: string;
   commands?: Command[];
   clientAction?: ClientAction;
   params?: string;

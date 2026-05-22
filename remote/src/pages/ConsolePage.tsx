@@ -3,14 +3,19 @@ import InputBox, { InputBoxHandle } from "../components/InputBox";
 import ActionButtons from "../components/ActionButtons";
 import SymbolModal from "../components/SymbolModal";
 import ExpandModal from "../components/ExpandModal";
+import HistoryModal, { saveToHistory } from "../components/HistoryModal";
+import HelpModal from "../components/HelpModal";
 import { useApi } from "../hooks/useApi";
-import { ButtonConfig, ConsoleConfig, LayoutConfig } from "../types/layout";
+import { ButtonConfig, LayoutConfig } from "../types/layout";
 
 export default function ConsolePage() {
   const [hasHistory, setHasHistory] = useState(false);
   const [symbolPair, setSymbolPair] = useState<string | null>(null);
   const [isExpandOpen, setIsExpandOpen] = useState(false);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [layout, setLayout] = useState<LayoutConfig | null>(null);
+  const [helpText, setHelpText] = useState<string | undefined>();
   const inputRef = useRef<InputBoxHandle>(null);
   const lastSentRef = useRef<string>("");
   const { execute, getConsoleConfig } = useApi();
@@ -18,6 +23,7 @@ export default function ConsolePage() {
   useEffect(() => {
     getConsoleConfig().then((config) => {
       setLayout(config);
+      setHelpText(config.help_text);
     });
   }, [getConsoleConfig]);
 
@@ -25,7 +31,6 @@ export default function ConsolePage() {
     async (buttons: ButtonConfig[]) => {
       for (const btn of buttons) {
         if (!btn.commands) continue;
-        // 替换 {{input}} 变量
         const inputText = inputRef.current?.getValue() ?? "";
         const commands = btn.commands.map((cmd) => ({
           ...cmd,
@@ -39,7 +44,6 @@ export default function ConsolePage() {
 
   const handleButtonClick = useCallback(
     async (button: ButtonConfig) => {
-      // 客户端动作
       if (button.clientAction) {
         switch (button.clientAction) {
           case "expand":
@@ -60,11 +64,27 @@ export default function ConsolePage() {
               setSymbolPair(button.params);
             }
             break;
+          case "history":
+            setIsHistoryOpen(true);
+            break;
+          case "fullscreen":
+            try {
+              if (document.fullscreenElement) {
+                await document.exitFullscreen();
+              } else {
+                await document.documentElement.requestFullscreen();
+              }
+            } catch {
+              // 静默处理
+            }
+            break;
+          case "help":
+            setIsHelpOpen(true);
+            break;
         }
         return;
       }
 
-      // 命令动作
       if (button.commands) {
         const inputText = inputRef.current?.getValue() ?? "";
         const commands = button.commands.map((cmd) => ({
@@ -73,9 +93,9 @@ export default function ConsolePage() {
         }));
         await execute(commands);
 
-        // 记录历史
         if (button.id === "send" || button.id === "submit") {
           lastSentRef.current = inputText;
+          saveToHistory(inputText);
           setHasHistory(true);
           inputRef.current?.clear();
         }
@@ -105,6 +125,7 @@ export default function ConsolePage() {
     async (text: string) => {
       if (!text) return;
       lastSentRef.current = text;
+      saveToHistory(text);
       await execute([{ action: "text", text, applyRules: true }]);
       setHasHistory(true);
       setIsExpandOpen(false);
@@ -117,6 +138,7 @@ export default function ConsolePage() {
     async (text: string) => {
       if (text) {
         lastSentRef.current = text;
+        saveToHistory(text);
         await execute([{ action: "text", text, applyRules: true }]);
       }
       await execute([{ action: "key", key: "enter" }]);
@@ -126,6 +148,11 @@ export default function ConsolePage() {
     },
     [execute]
   );
+
+  const handleHistorySelect = useCallback((text: string) => {
+    inputRef.current?.setValue(text);
+    setIsHistoryOpen(false);
+  }, []);
 
   const currentValue = inputRef.current?.getValue() ?? "";
 
@@ -156,6 +183,18 @@ export default function ConsolePage() {
           onSend={handleExpandSend}
           onSubmit={handleExpandSubmit}
           onClose={() => setIsExpandOpen(false)}
+        />
+      )}
+      {isHistoryOpen && (
+        <HistoryModal
+          onSelect={handleHistorySelect}
+          onClose={() => setIsHistoryOpen(false)}
+        />
+      )}
+      {isHelpOpen && (
+        <HelpModal
+          helpText={helpText}
+          onClose={() => setIsHelpOpen(false)}
         />
       )}
     </div>
