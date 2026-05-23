@@ -1,3 +1,5 @@
+import { Terminal, Settings } from "lucide-react";
+
 type Tab = "console" | "settings";
 
 interface BottomNavProps {
@@ -5,9 +7,9 @@ interface BottomNavProps {
   onTabChange: (tab: Tab) => void;
 }
 
-const tabs: { key: Tab; label: string; icon: string }[] = [
-  { key: "console", label: "控制台", icon: "⌨️" },
-  { key: "settings", label: "设置", icon: "⚙️" },
+const tabs: { key: Tab; label: string; icon: React.ReactNode }[] = [
+  { key: "console", label: "控制台", icon: <Terminal size={20} /> },
+  { key: "settings", label: "设置", icon: <Settings size={20} /> },
 ];
 
 export default function BottomNav({ activeTab, onTabChange }: BottomNavProps) {

@@ -1,68 +1,59 @@
-import { ButtonConfig } from "../types/layout";
+import { ActionGroup, ButtonConfig } from "../types/layout";
+import { useLongPress } from "../hooks/useLongPress";
 
 interface ActionButtonsProps {
-  buttons?: ButtonConfig[];
-  extraButtons?: ButtonConfig[];
-  gridColumns?: number;
+  groups: ActionGroup[];
   hasHistory?: boolean;
   onButtonClick: (button: ButtonConfig) => void;
+  onShowHelp?: (text: string) => void;
 }
 
-const DEFAULT_BUTTONS: ButtonConfig[] = [
-  { id: "left", label: "←", style: "cursor", commands: [{ action: "key", key: "left" }] },
-  { id: "up", label: "↑", style: "cursor", commands: [{ action: "key", key: "up" }] },
-  { id: "down", label: "↓", style: "cursor", commands: [{ action: "key", key: "down" }] },
-  { id: "right", label: "→", style: "cursor", commands: [{ action: "key", key: "right" }] },
-  { id: "delete", label: "删除", style: "delete", commands: [{ action: "key", key: "backspace" }] },
-  { id: "undo", label: "撤销", style: "undo", commands: [{ action: "undo" }] },
-  { id: "resend", label: "上次", style: "resend", clientAction: "resend" },
-  { id: "symbol1", label: "（）", style: "symbol", clientAction: "symbol", params: "()" },
-];
-
-const DEFAULT_EXTRA: ButtonConfig[] = [
-  { id: "symbol2", label: '""', style: "symbol", clientAction: "symbol", params: '""' },
-  { id: "symbol3", label: "「」", style: "symbol", clientAction: "symbol", params: "「」" },
-  { id: "symbol4", label: "[]", style: "symbol", clientAction: "symbol", params: "[]" },
-];
-
 export default function ActionButtons({
-  buttons = DEFAULT_BUTTONS,
-  extraButtons = DEFAULT_EXTRA,
-  gridColumns = 4,
+  groups,
   hasHistory = false,
   onButtonClick,
+  onShowHelp,
 }: ActionButtonsProps) {
+  const longPress = useLongPress((text) => onShowHelp?.(text));
+
   const isDisabled = (btn: ButtonConfig) => {
-    return btn.id === "undo" && !hasHistory;
+    if (btn.id === "undo" && !hasHistory) return true;
+    return false;
+  };
+
+  const handlePointerDown = (btn: ButtonConfig) => {
+    longPress.start(btn.help);
+  };
+
+  const handleClick = (btn: ButtonConfig) => {
+    if (longPress.release()) return;
+    onButtonClick(btn);
   };
 
   return (
-    <div className="action-card">
-      <div className="card-grid" style={{ gridTemplateColumns: `repeat(${gridColumns}, 1fr)` }}>
-        {buttons.map((btn) => (
-          <button
-            key={btn.id}
-            className={`card-btn ${btn.style} ${btn.id === "undo" && hasHistory ? "active" : ""}`}
-            onClick={() => onButtonClick(btn)}
-            disabled={isDisabled(btn)}
+    <>
+      {groups.map((group, gi) => (
+        <div key={gi} className="action-group">
+          <span className="group-title">{group.title}</span>
+          <div
+            className="card-grid"
+            style={{ gridTemplateColumns: `repeat(${group.columns ?? 4}, 1fr)` }}
           >
-            {btn.label}
-          </button>
-        ))}
-      </div>
-      {extraButtons && extraButtons.length > 0 && (
-        <div className="card-grid" style={{ gridTemplateColumns: `repeat(${gridColumns}, 1fr)` }}>
-          {extraButtons.map((btn) => (
-            <button
-              key={btn.id}
-              className={`card-btn ${btn.style}`}
-              onClick={() => onButtonClick(btn)}
-            >
-              {btn.label}
-            </button>
-          ))}
+            {group.buttons.map((btn) => (
+              <button
+                key={btn.id}
+                className={`card-btn btn-${btn.variant ?? "secondary"} ${btn.id === "undo" && hasHistory ? "active" : ""}`}
+                disabled={isDisabled(btn)}
+                onPointerDown={() => handlePointerDown(btn)}
+                onClick={() => handleClick(btn)}
+                onPointerLeave={() => longPress.stop()}
+              >
+                {btn.label}
+              </button>
+            ))}
+          </div>
         </div>
-      )}
-    </div>
+      ))}
+    </>
   );
 }

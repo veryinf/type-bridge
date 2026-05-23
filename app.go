@@ -58,24 +58,27 @@ var lastOperation struct {
 	Content string
 }
 
+// ActionGroup 操作按钮分组
+type ActionGroup struct {
+	Title   string         `json:"title"`
+	Columns int            `json:"columns,omitempty"`
+	Buttons []ButtonConfig `json:"buttons"`
+}
+
 // ConsoleConfig 控制台配置（从 default_console.json 加载）
 type ConsoleConfig struct {
-	HelpText           string               `json:"help_text"`
-	GridColumns        int                  `json:"gridColumns"`
-	InputButtons       []ButtonConfig       `json:"inputButtons"`
-	ActionButtons      []ButtonConfig       `json:"actionButtons"`
-	ExtraActionButtons []ButtonConfig       `json:"extraActionButtons"`
-	Rules              []automation.RuleConfig `json:"rules"`
+	HelpText     string               `json:"help_text"`
+	InputButtons []ButtonConfig       `json:"inputButtons"`
+	ActionGroups []ActionGroup        `json:"actionGroups"`
+	Rules        []automation.RuleConfig `json:"rules"`
 }
 
 // ButtonConfig 按钮配置
 type ButtonConfig struct {
-	ID           string    `json:"id"`
-	Label        string    `json:"label"`
-	Style        string    `json:"style"`
-	Commands     []Command `json:"commands,omitempty"`
-	ClientAction string    `json:"clientAction,omitempty"`
-	Params       string    `json:"params,omitempty"`
+	ID       string    `json:"id"`
+	Label    string    `json:"label"`
+	Variant  string    `json:"variant,omitempty"`
+	Commands []Command `json:"commands,omitempty"`
 }
 
 var (

@@ -7,23 +7,25 @@ export interface Command {
   ms?: number;
 }
 
-export type ClientAction = "expand" | "clear" | "resend" | "symbol" | "history" | "fullscreen" | "help";
-
 export interface ButtonConfig {
   id: string;
   label: string;
-  style: string;
-  icon?: string;
+  variant?: string;
+  icon?: React.ReactNode;
   commands?: Command[];
-  clientAction?: ClientAction;
-  params?: string;
+  help?: string;
+  requireInput?: boolean;
+}
+
+export interface ActionGroup {
+  title: string;
+  columns?: number;
+  buttons: ButtonConfig[];
 }
 
 export interface LayoutConfig {
   inputButtons: ButtonConfig[];
-  actionButtons: ButtonConfig[];
-  extraActionButtons?: ButtonConfig[];
-  gridColumns?: number;
+  actionGroups: ActionGroup[];
 }
 
 export interface RuleConfig {

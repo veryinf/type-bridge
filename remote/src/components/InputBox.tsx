@@ -1,55 +1,51 @@
-import { forwardRef, useImperativeHandle, useRef, useState, KeyboardEvent } from "react";
+import { forwardRef, useImperativeHandle, useRef, useState, useEffect, KeyboardEvent } from "react";
+import { Maximize2, ClipboardList, Maximize, HelpCircle, Eraser } from "lucide-react";
 import { ButtonConfig } from "../types/layout";
+import { useLongPress } from "../hooks/useLongPress";
 
 interface InputBoxProps {
-  buttons?: ButtonConfig[];
+  buttons: ButtonConfig[];
+  syncValue?: string;
+  onChange?: (value: string) => void;
   onButtonClick: (button: ButtonConfig) => void;
+  onShowHelp?: (text: string) => void;
 }
 
 export interface InputBoxHandle {
-  getValue: () => string;
-  setValue: (v: string) => void;
-  clear: () => void;
+  focus: () => void;
   getTextArea: () => HTMLTextAreaElement | null;
 }
 
-const DEFAULT_BUTTONS: ButtonConfig[] = [
-  { id: "send", label: "发送", style: "send", commands: [{ action: "text", text: "{{input}}", applyRules: true }] },
-  { id: "enter", label: "回车", style: "enter", commands: [{ action: "key", key: "enter" }] },
-  { id: "submit", label: "提交", style: "submit", commands: [{ action: "text", text: "{{input}}", applyRules: true }, { action: "key", key: "enter" }] },
-  { id: "clear", label: "清空", style: "clear", clientAction: "clear" },
-  { id: "expand", label: "更大", style: "expand", icon: "⤢", clientAction: "expand" },
-  { id: "history", label: "历史", style: "history", icon: "📋", clientAction: "history" },
-  { id: "fullscreen", label: "全屏", style: "fullscreen", icon: "⛶", clientAction: "fullscreen" },
-  { id: "help", label: "帮助", style: "help", icon: "?", clientAction: "help" },
+const ICON_BUTTONS: ButtonConfig[] = [
+  { id: "clear", label: "清空", icon: <Eraser size={16} />, help: "清空输入框内容" },
+  { id: "expand", label: "更大", icon: <Maximize2 size={16} />, help: "展开全屏编辑器" },
+  { id: "history", label: "历史", icon: <ClipboardList size={16} />, help: "查看发送历史记录" },
+  { id: "fullscreen", label: "全屏", icon: <Maximize size={16} />, help: "切换全屏模式" },
+  { id: "help", label: "帮助", icon: <HelpCircle size={16} />, help: "长按查看帮助" },
 ];
 
 const InputBox = forwardRef<InputBoxHandle, InputBoxProps>(
-  ({ buttons = DEFAULT_BUTTONS, onButtonClick }, ref) => {
+  ({ buttons, syncValue, onChange, onButtonClick, onShowHelp }, ref) => {
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const [charCount, setCharCount] = useState(0);
+    const longPress = useLongPress((text) => onShowHelp?.(text));
 
     useImperativeHandle(ref, () => ({
-      getValue: () => textareaRef.current?.value ?? "",
-      setValue: (v: string) => {
-        if (textareaRef.current) {
-          textareaRef.current.value = v;
-          setCharCount(v.length);
-        }
-      },
-      clear: () => {
-        if (textareaRef.current) {
-          textareaRef.current.value = "";
-          setCharCount(0);
-        }
-      },
+      focus: () => textareaRef.current?.focus(),
       getTextArea: () => textareaRef.current,
     }));
+
+    // 从外部同步值（来自 ExpandModal 或历史记录）
+    useEffect(() => {
+      if (textareaRef.current && syncValue !== undefined && textareaRef.current.value !== syncValue) {
+        textareaRef.current.value = syncValue;
+        setCharCount(syncValue.length);
+      }
+    }, [syncValue]);
 
     const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
       if (e.key === "Enter" && !e.shiftKey) {
         e.preventDefault();
-        // 查找发送或提交按钮
         const sendBtn = buttons.find((b) => b.id === "send");
         const submitBtn = buttons.find((b) => b.id === "submit");
         const text = textareaRef.current?.value.trim() ?? "";
@@ -62,11 +58,23 @@ const InputBox = forwardRef<InputBoxHandle, InputBoxProps>(
     };
 
     const handleInput = () => {
-      setCharCount(textareaRef.current?.value.length || 0);
+      const value = textareaRef.current?.value ?? "";
+      setCharCount(value.length);
+      onChange?.(value);
+    };
+
+    const handlePointerDown = (btn: ButtonConfig) => {
+      longPress.start(btn.help);
+    };
+
+    const handleClick = (btn: ButtonConfig) => {
+      if (longPress.release()) return;
+      onButtonClick(btn);
     };
 
     return (
       <div className="input-card">
+        {/* Row 1: 输入框 */}
         <div className="textarea-wrapper">
           <textarea
             ref={textareaRef}
@@ -74,8 +82,28 @@ const InputBox = forwardRef<InputBoxHandle, InputBoxProps>(
             onInput={handleInput}
             placeholder="请输入内容..."
           />
-          <span className="char-count">{charCount} 字</span>
         </div>
+
+        {/* Row 2: 字数(左) + icon按钮(右) */}
+        <div className="input-meta">
+          <span className="char-count">{charCount} 字</span>
+          <div className="input-icon-btns">
+            {ICON_BUTTONS.map((btn) => (
+              <button
+                key={btn.id}
+                className="input-btn icon"
+                title={btn.label}
+                onPointerDown={() => handlePointerDown(btn)}
+                onClick={() => handleClick(btn)}
+                onPointerLeave={() => longPress.stop()}
+              >
+                {btn.icon}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Row 3: JSON 定义的按钮 */}
         <div className="input-btns">
           {(() => {
             const rows: ButtonConfig[][] = [];
@@ -84,26 +112,17 @@ const InputBox = forwardRef<InputBoxHandle, InputBoxProps>(
             }
             return rows.map((row, ri) => (
               <div key={ri} className="input-btn-row">
-                {row.map((btn) =>
-                  btn.icon ? (
-                    <button
-                      key={btn.id}
-                      className={`input-btn icon ${btn.style}`}
-                      onClick={() => onButtonClick(btn)}
-                      title={btn.label}
-                    >
-                      {btn.icon}
-                    </button>
-                  ) : (
-                    <button
-                      key={btn.id}
-                      className={`input-btn ${btn.style}`}
-                      onClick={() => onButtonClick(btn)}
-                    >
-                      {btn.label}
-                    </button>
-                  )
-                )}
+                {row.map((btn) => (
+                  <button
+                    key={btn.id}
+                    className={`input-btn btn-${btn.variant ?? "secondary"}`}
+                    onPointerDown={() => handlePointerDown(btn)}
+                    onClick={() => handleClick(btn)}
+                    onPointerLeave={() => longPress.stop()}
+                  >
+                    {btn.label}
+                  </button>
+                ))}
               </div>
             ));
           })()}

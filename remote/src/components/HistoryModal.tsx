@@ -20,7 +20,6 @@ export function loadHistory(): HistoryEntry[] {
 
 export function saveToHistory(text: string) {
   const history = loadHistory();
-  // 去重：如果最新一条相同则不重复保存
   if (history.length > 0 && history[0].text === text) return;
   history.unshift({ text, timestamp: Date.now() });
   if (history.length > MAX_ENTRIES) history.length = MAX_ENTRIES;

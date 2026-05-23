@@ -1,68 +1,177 @@
-import { useRef, useEffect, useState } from "react";
+import { useRef, useEffect, useState, KeyboardEvent } from "react";
+import { Eraser, Minimize2, ClipboardList } from "lucide-react";
+import { ButtonConfig } from "../types/layout";
+import { useLongPress } from "../hooks/useLongPress";
 
 interface ExpandModalProps {
-  initialValue?: string;
-  onSend: (text: string) => void;
-  onSubmit: (text: string) => void;
+  buttons: ButtonConfig[];
+  value: string;
+  onChange: (value: string) => void;
+  onAction: (button: ButtonConfig) => void;
   onClose: () => void;
+  onShowHelp?: (text: string) => void;
 }
 
 export default function ExpandModal({
-  initialValue = "",
-  onSend,
-  onSubmit,
+  buttons,
+  value,
+  onChange,
+  onAction,
   onClose,
+  onShowHelp,
 }: ExpandModalProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const [charCount, setCharCount] = useState(initialValue.length);
+  const [charCount, setCharCount] = useState(value.length);
+  const syncingRef = useRef(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const longPress = useLongPress((text) => onShowHelp?.(text));
 
   useEffect(() => {
     if (textareaRef.current) {
-      textareaRef.current.value = initialValue;
+      textareaRef.current.value = value;
       textareaRef.current.focus();
     }
-  }, [initialValue]);
+  }, []);
 
-  const getText = () => textareaRef.current?.value.trim() ?? "";
+  // 从外部同步值（来自 InputBox）
+  useEffect(() => {
+    if (syncingRef.current) {
+      syncingRef.current = false;
+      return;
+    }
+    if (textareaRef.current && textareaRef.current.value !== value) {
+      textareaRef.current.value = value;
+      setCharCount(value.length);
+    }
+  }, [value]);
 
-  const handleSend = () => {
-    const text = getText();
-    if (text) onSend(text);
-  };
+  // 动态调整高度以适配输入法
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv || !containerRef.current) return;
 
-  const handleSubmit = () => {
-    const text = getText();
-    onSubmit(text);
+    const syncHeight = () => {
+      if (containerRef.current) {
+        containerRef.current.style.height = `${vv.height}px`;
+        containerRef.current.style.top = `${vv.offsetTop}px`;
+      }
+    };
+
+    syncHeight();
+    vv.addEventListener("resize", syncHeight);
+    vv.addEventListener("scroll", syncHeight);
+    return () => {
+      vv.removeEventListener("resize", syncHeight);
+      vv.removeEventListener("scroll", syncHeight);
+    };
+  }, []);
+
+  const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      const sendBtn = buttons.find((b) => b.id === "send");
+      const submitBtn = buttons.find((b) => b.id === "submit");
+      const text = textareaRef.current?.value.trim() ?? "";
+      if (text && sendBtn) {
+        onAction(sendBtn);
+      } else if (!text && submitBtn) {
+        onAction(submitBtn);
+      }
+    }
   };
 
   const handleInput = () => {
-    setCharCount(textareaRef.current?.value.length || 0);
+    const newValue = textareaRef.current?.value ?? "";
+    setCharCount(newValue.length);
+    syncingRef.current = true;
+    onChange(newValue);
   };
 
+  const handlePointerDown = (btn: ButtonConfig) => {
+    longPress.start(btn.help);
+  };
+
+  const handleClick = (btn: ButtonConfig) => {
+    if (longPress.release()) return;
+    onAction(btn);
+  };
+
+  const clearBtn: ButtonConfig = { id: "clear", label: "清空", help: "清空输入框内容" };
+  const collapseBtn: ButtonConfig = { id: "collapse", label: "缩小", help: "关闭全屏编辑器" };
+  const historyBtn: ButtonConfig = { id: "history", label: "历史", help: "查看发送历史记录" };
+
   return (
-    <div className="expand-modal">
-      <div className="expand-header">
-        <span className="expand-title">编辑内容</span>
-        <span className="expand-char-count">{charCount} 字</span>
-        <button className="expand-close" onClick={onClose}>
-          ✕
-        </button>
-      </div>
-      <div className="expand-body">
-        <textarea
-          ref={textareaRef}
-          onInput={handleInput}
-          placeholder="请输入内容..."
-          autoFocus
-        />
-      </div>
-      <div className="expand-footer">
-        <button className="expand-btn send" onClick={handleSend}>
-          发送
-        </button>
-        <button className="expand-btn submit" onClick={handleSubmit}>
-          提交
-        </button>
+    <div className="expand-modal" ref={containerRef}>
+      <div className="input-card">
+        {/* Row 1: 输入框 */}
+        <div className="textarea-wrapper">
+          <textarea
+            ref={textareaRef}
+            onKeyDown={handleKeyDown}
+            onInput={handleInput}
+            placeholder="请输入内容..."
+            autoFocus
+          />
+        </div>
+
+        {/* Row 2: 字数(左) + icon按钮(右) */}
+        <div className="input-meta">
+          <span className="char-count">{charCount} 字</span>
+          <div className="input-icon-btns">
+            <button
+              className="input-btn icon"
+              title="清空"
+              onPointerDown={() => handlePointerDown(clearBtn)}
+              onClick={() => handleClick(clearBtn)}
+              onPointerLeave={() => longPress.stop()}
+            >
+              <Eraser size={16} />
+            </button>
+            <button
+              className="input-btn icon"
+              title="缩小"
+              onPointerDown={() => handlePointerDown(collapseBtn)}
+              onClick={() => handleClick(collapseBtn)}
+              onPointerLeave={() => longPress.stop()}
+            >
+              <Minimize2 size={16} />
+            </button>
+            <button
+              className="input-btn icon"
+              title="历史"
+              onPointerDown={() => handlePointerDown(historyBtn)}
+              onClick={() => handleClick(historyBtn)}
+              onPointerLeave={() => longPress.stop()}
+            >
+              <ClipboardList size={16} />
+            </button>
+          </div>
+        </div>
+
+        {/* Row 3: JSON 定义的按钮 */}
+        <div className="input-btns">
+          {(() => {
+            const rows: ButtonConfig[][] = [];
+            for (let i = 0; i < buttons.length; i += 4) {
+              rows.push(buttons.slice(i, i + 4));
+            }
+            return rows.map((row, ri) => (
+              <div key={ri} className="input-btn-row">
+                {row.map((btn) => (
+                  <button
+                    key={btn.id}
+                    className={`input-btn btn-${btn.variant ?? "secondary"}`}
+                    onPointerDown={() => handlePointerDown(btn)}
+                    onClick={() => handleClick(btn)}
+                    onPointerLeave={() => longPress.stop()}
+                  >
+                    {btn.label}
+                  </button>
+                ))}
+              </div>
+            ));
+          })()}
+        </div>
       </div>
     </div>
   );

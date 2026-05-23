@@ -16,7 +16,6 @@ export default function SettingsPage() {
   const [settings, setSettings] = useState<Settings>(defaultSettings);
 
   useEffect(() => {
-    // 从 localStorage 加载设置
     const saved = localStorage.getItem("typebridge-settings");
     if (saved) {
       try {
@@ -42,10 +41,6 @@ export default function SettingsPage() {
 
   return (
     <div className="page settings-page">
-      <div className="page-header">
-        <h2>设置</h2>
-      </div>
-
       <div className="settings-group">
         <h3 className="group-title">通用</h3>
         <div className="setting-item">

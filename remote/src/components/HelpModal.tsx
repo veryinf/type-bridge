@@ -3,17 +3,8 @@ interface HelpModalProps {
   onClose: () => void;
 }
 
-const DEFAULT_HELP = `## 基本操作
-- **发送** - 将文本发送到电脑（应用替换规则）
-- **回车** - 发送回车键
-- **提交** - 发送文本 + 回车
-- **清空** - 清空输入框
-
-## 快捷操作
-- **光标移动** - 控制电脑光标方向
-- **删除** - 删除电脑上的字符
-- **撤销** - 撤销上一次发送
-- **上次** - 重新发送上一次内容
+const DEFAULT_HELP = `## 按钮帮助
+- **长按任意按钮** 可查看该按钮的详细说明
 
 ## 使用提示
 - 确保手机和电脑在同一局域网
@@ -23,7 +14,6 @@ const DEFAULT_HELP = `## 基本操作
 export default function HelpModal({ helpText, onClose }: HelpModalProps) {
   const content = helpText || DEFAULT_HELP;
 
-  // 简单的 Markdown 渲染
   const renderMarkdown = (text: string) => {
     return text.split("\n").map((line, i) => {
       if (line.startsWith("## ")) {
