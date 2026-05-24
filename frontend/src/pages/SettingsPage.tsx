@@ -1,16 +1,16 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Settings, Globe, MonitorSmartphone, Palette, Save } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Badge } from "../components/ui/badge";
-import { Separator } from "../components/ui/separator";
 import { GetServerPort } from "../../wailsjs/go/main/App";
-import { useEffect } from "react";
+import { useTheme } from "../hooks/useTheme";
 
 export default function SettingsPage() {
   const [port, setPort] = useState("5000");
   const [saved, setSaved] = useState(false);
+  const { theme, setTheme } = useTheme();
 
   useEffect(() => {
     try {
@@ -81,8 +81,20 @@ export default function SettingsPage() {
             <div className="flex items-center gap-4">
               <label className="text-sm font-medium w-20 shrink-0">主题</label>
               <div className="flex gap-2">
-                <Button variant="default" size="sm">深色</Button>
-                <Button variant="outline" size="sm" disabled>浅色（开发中）</Button>
+                <Button
+                  variant={theme === "light" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setTheme("light")}
+                >
+                  浅色
+                </Button>
+                <Button
+                  variant={theme === "dark" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setTheme("dark")}
+                >
+                  深色
+                </Button>
               </div>
             </div>
           </CardContent>

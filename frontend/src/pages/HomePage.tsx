@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { Copy, ExternalLink, Minus, Terminal, Keyboard, CornerDownLeft, Undo2, MousePointer } from "lucide-react";
-import { GetAccessURL, GetVersion } from "../../wailsjs/go/main/App";
+import { GetAccessURL, GetLanIP, GetVersion } from "../../wailsjs/go/main/App";
 import { WindowHide } from "../../wailsjs/runtime/runtime";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Button } from "../components/ui/button";
@@ -13,17 +13,27 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    try {
-      GetAccessURL().then((url) => {
-        setAccessURL(url);
-        setLoading(false);
-      });
-      GetVersion().then((v) => setVersion(v));
-    } catch {
-      setAccessURL("http://localhost:5000/mobile.html");
-      setVersion("dev");
-      setLoading(false);
+    const isDev = import.meta.env.DEV;
+
+    if (isDev) {
+      GetLanIP()
+        .then((ip) => {
+          setAccessURL(`http://${ip}:3020`);
+        })
+        .catch(() => {
+          setAccessURL("http://localhost:3020");
+        })
+        .finally(() => setLoading(false));
+    } else {
+      GetAccessURL()
+        .then((url) => setAccessURL(url))
+        .catch(() => setAccessURL("http://localhost:5000/mobile.html"))
+        .finally(() => setLoading(false));
     }
+
+    GetVersion()
+      .then((v) => setVersion(v))
+      .catch(() => setVersion("dev"));
   }, []);
 
   const copyToClipboard = () => navigator.clipboard.writeText(accessURL);

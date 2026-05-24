@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/fs"
+	"net"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -132,7 +133,24 @@ func (a *App) startup(ctx context.Context) {
 }
 
 func (a *App) GetAccessURL() string {
-	return fmt.Sprintf("http://localhost:%d/mobile.html", Port)
+	return fmt.Sprintf("http://%s:%d/mobile.html", getLanIP(), Port)
+}
+
+func (a *App) GetLanIP() string {
+	return getLanIP()
+}
+
+func getLanIP() string {
+	addrs, err := net.InterfaceAddrs()
+	if err != nil {
+		return "localhost"
+	}
+	for _, addr := range addrs {
+		if ipNet, ok := addr.(*net.IPNet); ok && !ipNet.IP.IsLoopback() && ipNet.IP.To4() != nil {
+			return ipNet.IP.String()
+		}
+	}
+	return "localhost"
 }
 
 func (a *App) GetVersion() string {
