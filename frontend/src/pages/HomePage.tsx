@@ -1,40 +1,45 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { QRCodeSVG } from "qrcode.react";
-import { Copy, ExternalLink, Minus, Terminal, Keyboard, CornerDownLeft, Undo2, MousePointer } from "lucide-react";
-import { GetAccessURL, GetLanIP, GetVersion } from "../../wailsjs/go/main/App";
+import { Copy, ExternalLink, Minus, Terminal, Keyboard, CornerDownLeft, Undo2, MousePointer, RefreshCw } from "lucide-react";
+import { GetLanIPs, GetServerPort, GetVersion } from "../../wailsjs/go/main/App";
 import { WindowHide } from "../../wailsjs/runtime/runtime";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
 
 export default function HomePage() {
-  const [accessURL, setAccessURL] = useState("");
+  const [ips, setIps] = useState<string[]>([]);
+  const [ipIndex, setIpIndex] = useState(0);
+  const [port, setPort] = useState(5000);
   const [version, setVersion] = useState("");
   const [loading, setLoading] = useState(true);
 
+  const isDev = import.meta.env.DEV;
+  const displayPort = isDev ? 3020 : port;
+
   useEffect(() => {
-    const isDev = import.meta.env.DEV;
+    GetLanIPs()
+      .then((list) => {
+        if (list.length > 0) setIps(list);
+        else setIps(["localhost"]);
+      })
+      .catch(() => setIps(["localhost"]))
+      .finally(() => setLoading(false));
 
-    if (isDev) {
-      GetLanIP()
-        .then((ip) => {
-          setAccessURL(`http://${ip}:3020`);
-        })
-        .catch(() => {
-          setAccessURL("http://localhost:3020");
-        })
-        .finally(() => setLoading(false));
-    } else {
-      GetAccessURL()
-        .then((url) => setAccessURL(url))
-        .catch(() => setAccessURL("http://localhost:5000/mobile.html"))
-        .finally(() => setLoading(false));
+    if (!isDev) {
+      GetServerPort().then((p) => setPort(p)).catch(() => {});
     }
-
-    GetVersion()
-      .then((v) => setVersion(v))
-      .catch(() => setVersion("dev"));
+    GetVersion().then((v) => setVersion(v)).catch(() => setVersion("dev"));
   }, []);
+
+  const currentIP = ips[ipIndex] || "localhost";
+  const accessURL = `http://${currentIP}:${displayPort}/mobile.html`;
+
+  const switchIP = useCallback(() => {
+    if (ips.length > 1) {
+      setIpIndex((prev) => (prev + 1) % ips.length);
+    }
+  }, [ips.length]);
 
   const copyToClipboard = () => navigator.clipboard.writeText(accessURL);
 
@@ -66,7 +71,20 @@ export default function HomePage() {
               </div>
               <div className="w-full bg-muted/50 rounded-lg px-3 py-2 text-center">
                 <p className="text-xs text-muted-foreground mb-1">访问地址</p>
-                <p className="text-sm font-mono font-semibold text-primary break-all">{loading ? "加载中..." : accessURL}</p>
+                <p className="text-sm font-mono font-semibold text-primary break-all">
+                  {loading ? "加载中..." : accessURL}
+                </p>
+                {ips.length > 1 && (
+                  <div className="flex items-center justify-center gap-2 mt-2">
+                    <span className="text-xs text-muted-foreground">
+                      {ipIndex + 1} / {ips.length}
+                    </span>
+                    <Button variant="ghost" size="sm" className="h-6 px-2 gap-1 text-xs" onClick={switchIP}>
+                      <RefreshCw className="h-3 w-3" />
+                      切换地址
+                    </Button>
+                  </div>
+                )}
               </div>
               <div className="flex gap-2 w-full">
                 <Button variant="outline" size="sm" className="flex-1 gap-1.5" onClick={copyToClipboard} disabled={loading}>

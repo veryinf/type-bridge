@@ -133,24 +133,33 @@ func (a *App) startup(ctx context.Context) {
 }
 
 func (a *App) GetAccessURL() string {
-	return fmt.Sprintf("http://%s:%d/mobile.html", getLanIP(), Port)
+	ips := getAllLanIPs()
+	ip := "localhost"
+	if len(ips) > 0 {
+		ip = ips[0]
+	}
+	return fmt.Sprintf("http://%s:%d/mobile.html", ip, Port)
 }
 
-func (a *App) GetLanIP() string {
-	return getLanIP()
+func (a *App) GetLanIPs() []string {
+	return getAllLanIPs()
 }
 
-func getLanIP() string {
+func getAllLanIPs() []string {
 	addrs, err := net.InterfaceAddrs()
 	if err != nil {
-		return "localhost"
+		return []string{"localhost"}
 	}
+	var ips []string
 	for _, addr := range addrs {
 		if ipNet, ok := addr.(*net.IPNet); ok && !ipNet.IP.IsLoopback() && ipNet.IP.To4() != nil {
-			return ipNet.IP.String()
+			ips = append(ips, ipNet.IP.String())
 		}
 	}
-	return "localhost"
+	if len(ips) == 0 {
+		return []string{"localhost"}
+	}
+	return ips
 }
 
 func (a *App) GetVersion() string {
