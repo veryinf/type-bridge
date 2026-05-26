@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { QRCodeSVG } from "qrcode.react";
-import { Copy, ExternalLink, Minus, Terminal, Keyboard, CornerDownLeft, Undo2, MousePointer, RefreshCw } from "lucide-react";
+import { Copy, ExternalLink, Minus, Terminal, Keyboard, CornerDownLeft, Undo2, MousePointer } from "lucide-react";
 import { GetLanIPs, GetServerPort, GetVersion } from "../../wailsjs/go/main/App";
 import { WindowHide } from "../../wailsjs/runtime/runtime";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
@@ -33,13 +33,7 @@ export default function HomePage() {
   }, []);
 
   const currentIP = ips[ipIndex] || "localhost";
-  const accessURL = `http://${currentIP}:${displayPort}/mobile.html`;
-
-  const switchIP = useCallback(() => {
-    if (ips.length > 1) {
-      setIpIndex((prev) => (prev + 1) % ips.length);
-    }
-  }, [ips.length]);
+  const accessURL = `http://${currentIP}:${displayPort}`;
 
   const copyToClipboard = () => navigator.clipboard.writeText(accessURL);
 
@@ -75,14 +69,20 @@ export default function HomePage() {
                   {loading ? "加载中..." : accessURL}
                 </p>
                 {ips.length > 1 && (
-                  <div className="flex items-center justify-center gap-2 mt-2">
-                    <span className="text-xs text-muted-foreground">
-                      {ipIndex + 1} / {ips.length}
-                    </span>
-                    <Button variant="ghost" size="sm" className="h-6 px-2 gap-1 text-xs" onClick={switchIP}>
-                      <RefreshCw className="h-3 w-3" />
-                      切换地址
-                    </Button>
+                  <div className="flex items-center justify-center gap-1 mt-2">
+                    {ips.map((ip, i) => (
+                      <button
+                        key={ip}
+                        onClick={() => setIpIndex(i)}
+                        className={`px-2 py-0.5 rounded text-xs font-mono transition-colors ${
+                          i === ipIndex
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-muted text-muted-foreground hover:bg-muted/80"
+                        }`}
+                      >
+                        {ip}
+                      </button>
+                    ))}
                   </div>
                 )}
               </div>

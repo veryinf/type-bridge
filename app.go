@@ -14,7 +14,6 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/veryinf/easy-input/backend/automation"
 	"github.com/veryinf/easy-input/backend/database"
@@ -72,6 +71,7 @@ type ConsoleConfig struct {
 	InputButtons []ButtonConfig       `json:"inputButtons"`
 	ActionGroups []ActionGroup        `json:"actionGroups"`
 	Rules        []automation.RuleConfig `json:"rules"`
+	MaxLogCount  int                  `json:"maxLogCount"`
 }
 
 // ButtonConfig 按钮配置
@@ -87,15 +87,6 @@ var (
 	consoleMu     sync.RWMutex
 	consoleFile   = "default_console.json"
 )
-
-type LogEntry struct {
-	Time    string `json:"time"`
-	Type    string `json:"type"`
-	Content string `json:"content"`
-}
-
-var logs []LogEntry
-var logsMutex sync.Mutex
 
 func NewApp() *App {
 	return &App{}
@@ -138,7 +129,7 @@ func (a *App) GetAccessURL() string {
 	if len(ips) > 0 {
 		ip = ips[0]
 	}
-	return fmt.Sprintf("http://%s:%d/mobile.html", ip, Port)
+	return fmt.Sprintf("http://%s:%d", ip, Port)
 }
 
 func (a *App) GetLanIPs() []string {
@@ -146,14 +137,26 @@ func (a *App) GetLanIPs() []string {
 }
 
 func getAllLanIPs() []string {
-	addrs, err := net.InterfaceAddrs()
+	ifaces, err := net.Interfaces()
 	if err != nil {
 		return []string{"localhost"}
 	}
 	var ips []string
-	for _, addr := range addrs {
-		if ipNet, ok := addr.(*net.IPNet); ok && !ipNet.IP.IsLoopback() && ipNet.IP.To4() != nil {
-			ips = append(ips, ipNet.IP.String())
+	for _, iface := range ifaces {
+		if iface.Flags&net.FlagUp == 0 {
+			continue
+		}
+		if iface.Flags&net.FlagLoopback != 0 {
+			continue
+		}
+		addrs, err := iface.Addrs()
+		if err != nil {
+			continue
+		}
+		for _, addr := range addrs {
+			if ipNet, ok := addr.(*net.IPNet); ok && ipNet.IP.To4() != nil {
+				ips = append(ips, ipNet.IP.String())
+			}
 		}
 	}
 	if len(ips) == 0 {
@@ -170,12 +173,17 @@ func (a *App) GetServerPort() int {
 	return Port
 }
 
-func (a *App) GetLogs() []LogEntry {
-	logsMutex.Lock()
-	defer logsMutex.Unlock()
-	result := make([]LogEntry, len(logs))
-	copy(result, logs)
-	return result
+func (a *App) GetLogs() []database.LogEntry {
+	maxCount := consoleConfig.MaxLogCount
+	if maxCount <= 0 {
+		maxCount = 100
+	}
+	logs, err := database.GetLogs(maxCount)
+	if err != nil {
+		fmt.Printf("获取日志失败: %v\n", err)
+		return nil
+	}
+	return logs
 }
 
 func (a *App) SendText(text string) {
@@ -354,23 +362,21 @@ func executeHandler(w http.ResponseWriter, r *http.Request) {
 
 func logsHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	logsMutex.Lock()
-	defer logsMutex.Unlock()
+	maxCount := consoleConfig.MaxLogCount
+	if maxCount <= 0 {
+		maxCount = 100
+	}
+	logs, err := database.GetLogs(maxCount)
+	if err != nil {
+		json.NewEncoder(w).Encode([]database.LogEntry{})
+		return
+	}
 	json.NewEncoder(w).Encode(logs)
 }
 
 func addLog(logType, content string) {
-	logsMutex.Lock()
-	defer logsMutex.Unlock()
-	now := time.Now()
-	entry := LogEntry{
-		Time:    now.Format("15:04:05"),
-		Type:    logType,
-		Content: content,
-	}
-	logs = append(logs, entry)
-	if len(logs) > 100 {
-		logs = logs[1:]
+	if err := database.AddLog(logType, content); err != nil {
+		fmt.Printf("写入日志失败: %v\n", err)
 	}
 }
 

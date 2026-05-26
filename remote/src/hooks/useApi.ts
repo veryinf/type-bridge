@@ -1,12 +1,9 @@
 import { useCallback } from "react";
 import { Command, ConsoleConfig } from "../types/layout";
-import { mockExecute, mockGetConsoleConfig } from "../mock";
 
 const BASE_URL = "/api/v1";
-const USE_MOCK = import.meta.env.VITE_MOCK_API !== "false";
 
 async function execute(commands: Command[]) {
-  if (USE_MOCK) return mockExecute(commands);
   const res = await fetch(`${BASE_URL}/execute`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -41,7 +38,6 @@ export function useApi() {
   }, []);
 
   const getConsoleConfig = useCallback(async (): Promise<ConsoleConfig> => {
-    if (USE_MOCK) return mockGetConsoleConfig();
     const res = await fetch(`${BASE_URL}/console`);
     return res.json();
   }, []);

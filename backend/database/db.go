@@ -74,6 +74,12 @@ func createTables() error {
 			updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 		)`,
 		`CREATE INDEX IF NOT EXISTS idx_templates_sort_order ON templates(sort_order)`,
+		`CREATE TABLE IF NOT EXISTS logs (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			time TEXT NOT NULL,
+			type TEXT NOT NULL,
+			content TEXT NOT NULL
+		)`,
 	}
 
 	for _, query := range queries {

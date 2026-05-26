@@ -1,5 +1,6 @@
 {
   "help_text": "## 按钮帮助\n- **长按任意按钮** 可查看该按钮的详细说明\n\n## 使用提示\n- 确保手机和电脑在同一局域网\n- 文本会通过剪贴板粘贴到电脑当前焦点\n- 支持正则替换规则（在控制台配置中管理）",
+  "maxLogCount": 100,
   "inputButtons": [
     {"id": "send", "label": "发送", "variant": "primary", "help": "将输入框文本发送到电脑，支持正则替换规则", "commands": [{"action": "text", "text": "{{input}}", "applyRules": true}]},
     {"id": "enter", "label": "回车", "variant": "info", "help": "发送回车键", "commands": [{"action": "key", "key": "enter"}]},

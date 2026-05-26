@@ -1,26 +1,37 @@
 import { useState, useEffect } from "react";
-import { Settings, Globe, MonitorSmartphone, Palette, Save } from "lucide-react";
+import { Settings, Globe, MonitorSmartphone, Palette, Save, ScrollText } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Badge } from "../components/ui/badge";
-import { GetServerPort } from "../../wailsjs/go/main/App";
+import { GetServerPort, GetConsoleConfig, SaveConsoleConfig } from "../../wailsjs/go/main/App";
 import { useTheme } from "../hooks/useTheme";
 
 export default function SettingsPage() {
   const [port, setPort] = useState("5000");
+  const [maxLogCount, setMaxLogCount] = useState("100");
   const [saved, setSaved] = useState(false);
   const { theme, setTheme } = useTheme();
 
   useEffect(() => {
     try {
       GetServerPort().then((p) => setPort(String(p)));
+      GetConsoleConfig().then((config) => {
+        if (config.maxLogCount) {
+          setMaxLogCount(String(config.maxLogCount));
+        }
+      });
     } catch {}
   }, []);
 
-  const handleSave = () => {
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+  const handleSave = async () => {
+    try {
+      const config = await GetConsoleConfig();
+      config.maxLogCount = parseInt(maxLogCount) || 100;
+      await SaveConsoleConfig(config);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch {}
   };
 
   return (
@@ -96,6 +107,31 @@ export default function SettingsPage() {
                   深色
                 </Button>
               </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Log Settings */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <ScrollText className="h-4 w-4 text-primary" />
+              <CardTitle className="text-base">日志设置</CardTitle>
+            </div>
+            <CardDescription>配置操作日志的存储数量</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center gap-4">
+              <label className="text-sm font-medium w-24 shrink-0">最大记录数</label>
+              <Input
+                type="number"
+                value={maxLogCount}
+                onChange={(e) => setMaxLogCount(e.target.value)}
+                className="w-32"
+                min={10}
+                max={1000}
+              />
+              <span className="text-xs text-muted-foreground">范围 10-1000，默认 100</span>
             </div>
           </CardContent>
         </Card>
