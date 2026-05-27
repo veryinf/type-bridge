@@ -14,6 +14,7 @@ const defaultSettings: Settings = {
 
 export default function SettingsPage() {
   const [settings, setSettings] = useState<Settings>(defaultSettings);
+  const [version, setVersion] = useState("DEV");
 
   useEffect(() => {
     const saved = localStorage.getItem("typebridge-settings");
@@ -24,6 +25,11 @@ export default function SettingsPage() {
         console.error("加载设置失败:", e);
       }
     }
+
+    fetch("/api/v1/version")
+      .then((res) => res.json())
+      .then((data) => { if (data.version) setVersion(data.version); })
+      .catch(() => {});
   }, []);
 
   const handleToggle = (key: keyof Settings) => {
@@ -100,7 +106,7 @@ export default function SettingsPage() {
         <h3 className="group-title">关于</h3>
         <div className="about-info">
           <p className="app-name">Type Bridge</p>
-          <p className="app-version">版本 0.0.6</p>
+          <p className="app-version">版本 {version}</p>
           <p className="app-desc">手机电脑输入同步工具</p>
           <a
             href="https://github.com/veryinf/type-bridge"

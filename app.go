@@ -10,23 +10,26 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/veryinf/easy-input/backend/automation"
 	"github.com/veryinf/easy-input/backend/database"
-	wailsRuntime "github.com/wailsapp/wails/v2/pkg/runtime"
+	"github.com/wailsapp/wails/v3/pkg/application"
 )
 
 //go:embed all:remote/dist
 var remoteAssets embed.FS
 
+//go:embed default_console.json
+var defaultConsoleJSON []byte
+
 var (
-	CurrentVersion = "0.0.6"
-	GitHubRepo    = "veryinf/easy-input"
-	Port          = 5000
+	CurrentVersion = "DEV"
+	GitHubRepo     = "veryinf/easy-input"
+	Port           = 5000
 )
 
 type App struct {
@@ -71,7 +74,6 @@ type ConsoleConfig struct {
 	InputButtons []ButtonConfig       `json:"inputButtons"`
 	ActionGroups []ActionGroup        `json:"actionGroups"`
 	Rules        []automation.RuleConfig `json:"rules"`
-	MaxLogCount  int                  `json:"maxLogCount"`
 }
 
 // ButtonConfig 按钮配置
@@ -86,16 +88,22 @@ var (
 	consoleConfig ConsoleConfig
 	consoleMu     sync.RWMutex
 	consoleFile   = "default_console.json"
+	httpServer    *http.Server
+	serverMu      sync.Mutex
 )
 
 func NewApp() *App {
 	return &App{}
 }
 
-func (a *App) startup(ctx context.Context) {
-	a.ctx = ctx
+// ServiceName 返回服务名称（Wails v3 可选接口）
+func (a *App) ServiceName() string {
+	return "App"
+}
 
-	exeDir := getExecDir()
+// ServiceStartup 应用启动时调用（替代 v2 的 OnStartup）
+func (a *App) ServiceStartup(ctx context.Context, options application.ServiceOptions) error {
+	a.ctx = ctx
 
 	// 加载控制台配置
 	if err := a.loadConsoleConfig(); err != nil {
@@ -109,18 +117,34 @@ func (a *App) startup(ctx context.Context) {
 		fmt.Printf("警告：加载替换规则失败 %v\n", err)
 	}
 
-	// 初始化数据库
-	dbPath := filepath.Join(exeDir, "db", "typebridge.db")
-	if err := database.Init(dbPath); err != nil {
-		fmt.Printf("警告：初始化数据库失败 %v\n", err)
-	} else {
-		fmt.Println("数据库初始化成功")
+	// 从数据库读取端口配置
+	port := database.GetIntConfig("httpPort", Port)
+	if port > 0 {
+		Port = port
 	}
 
-	go StartServer(Port)
+	go startHTTPServer(port)
 
 	fmt.Printf("已加载 %d 条替换规则\n", len(automation.Rules))
 	fmt.Printf("当前版本 v%s，项目地址：https://github.com/%s\n", CurrentVersion, GitHubRepo)
+
+	return nil
+}
+
+// ServiceShutdown 应用关闭时调用
+func (a *App) ServiceShutdown() error {
+	serverMu.Lock()
+	srv := httpServer
+	serverMu.Unlock()
+
+	if srv != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		defer cancel()
+		srv.Shutdown(ctx)
+	}
+
+	database.Close()
+	return nil
 }
 
 func (a *App) GetAccessURL() string {
@@ -173,11 +197,31 @@ func (a *App) GetServerPort() int {
 	return Port
 }
 
-func (a *App) GetLogs() []database.LogEntry {
-	maxCount := consoleConfig.MaxLogCount
-	if maxCount <= 0 {
-		maxCount = 100
+func (a *App) GetMaxLogCount() int {
+	return database.GetIntConfig("maxLogCount", 100)
+}
+
+func (a *App) SetMaxLogCount(count int) error {
+	if count < 0 {
+		return fmt.Errorf("最大记录数不能为负数")
 	}
+	return database.SetConfig("maxLogCount", strconv.Itoa(count))
+}
+
+func (a *App) GetMinimizeToTray() bool {
+	v, err := database.GetConfig("minimizeToTray")
+	if err != nil {
+		return true
+	}
+	return v == "" || v == "true"
+}
+
+func (a *App) SetMinimizeToTray(v bool) {
+	database.SetConfig("minimizeToTray", strconv.FormatBool(v))
+}
+
+func (a *App) GetLogs() []database.LogEntry {
+	maxCount := database.GetIntConfig("maxLogCount", 100)
 	logs, err := database.GetLogs(maxCount)
 	if err != nil {
 		fmt.Printf("获取日志失败: %v\n", err)
@@ -239,35 +283,25 @@ func (a *App) DeletePC() {
 }
 
 func (a *App) ShowWindow() {
-	wailsRuntime.WindowShow(a.ctx)
+	if mainWindow != nil {
+		mainWindow.Show()
+	}
 }
 
 func (a *App) QuitApp() {
-	wailsRuntime.Quit(a.ctx)
+	application.Get().Quit()
 }
 
 func getExecDir() string {
-	_, filename, _, _ := runtime.Caller(0)
-	dir := filepath.Dir(filename)
-	if !contains(dir, "\\") {
-		dir, _ = os.Getwd()
+	exePath, err := os.Executable()
+	if err != nil {
+		dir, _ := os.Getwd()
+		return dir
 	}
-	if dir == "" {
-		dir, _ = os.Getwd()
-	}
-	return dir
+	return filepath.Dir(exePath)
 }
 
-func contains(s, substr string) bool {
-	for i := 0; i <= len(s)-len(substr); i++ {
-		if s[i:i+len(substr)] == substr {
-			return true
-		}
-	}
-	return false
-}
-
-func StartServer(port int) {
+func startHTTPServer(port int) {
 	remoteDist, err := fs.Sub(remoteAssets, "remote/dist")
 	if err != nil {
 		fmt.Printf("错误：无法加载远程界面资源 %v\n", err)
@@ -283,17 +317,48 @@ func StartServer(port int) {
 	mux.Handle("/", fileServer)
 	mux.HandleFunc("/api/v1/execute", executeHandler)
 	mux.HandleFunc("/api/v1/logs", logsHandler)
-
-	// 模板 API
 	mux.HandleFunc("/api/v1/templates", templatesHandler)
 	mux.HandleFunc("/api/v1/templates/", templateHandler)
-
-	// 控制台配置 API
 	mux.HandleFunc("/api/v1/console", consoleHandler)
+	mux.HandleFunc("/api/v1/version", versionHandler)
 
 	addr := fmt.Sprintf(":%d", port)
+	srv := &http.Server{Addr: addr, Handler: mux}
+
+	serverMu.Lock()
+	httpServer = srv
+	serverMu.Unlock()
+
 	fmt.Printf("手机访问地址：http://localhost%s/mobile.html\n", addr)
-	http.ListenAndServe(addr, mux)
+	if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		fmt.Printf("HTTP 服务器错误: %v\n", err)
+	}
+}
+
+// SetServerPort Wails 绑定：修改服务端口并重启 HTTP 服务器
+func (a *App) SetServerPort(newPort int) error {
+	if newPort < 1 || newPort > 65535 {
+		return fmt.Errorf("端口范围无效，应为 1-65535")
+	}
+
+	if err := database.SetConfig("httpPort", strconv.Itoa(newPort)); err != nil {
+		return fmt.Errorf("保存端口配置失败: %w", err)
+	}
+
+	serverMu.Lock()
+	srv := httpServer
+	serverMu.Unlock()
+
+	if srv != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		defer cancel()
+		srv.Shutdown(ctx)
+	}
+
+	Port = newPort
+	go startHTTPServer(newPort)
+
+	return nil
 }
 
 func executeHandler(w http.ResponseWriter, r *http.Request) {
@@ -362,16 +427,18 @@ func executeHandler(w http.ResponseWriter, r *http.Request) {
 
 func logsHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	maxCount := consoleConfig.MaxLogCount
-	if maxCount <= 0 {
-		maxCount = 100
-	}
+	maxCount := database.GetIntConfig("maxLogCount", 100)
 	logs, err := database.GetLogs(maxCount)
 	if err != nil {
 		json.NewEncoder(w).Encode([]database.LogEntry{})
 		return
 	}
 	json.NewEncoder(w).Encode(logs)
+}
+
+func versionHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{"version": CurrentVersion})
 }
 
 func addLog(logType, content string) {
@@ -383,11 +450,6 @@ func addLog(logType, content string) {
 func jsonResp(w http.ResponseWriter, status, msg string) {
 	w.Header().Set("Content-Type", "application/json")
 	fmt.Fprintf(w, `{"status":"%s","msg":"%s"}`, status, msg)
-}
-
-func jsonRespWithContent(w http.ResponseWriter, status, msg, content string) {
-	w.Header().Set("Content-Type", "application/json")
-	fmt.Fprintf(w, `{"status":"%s","msg":"%s","content":"%s"}`, status, msg, content)
 }
 
 // templatesHandler 处理 /api/v1/templates
@@ -436,7 +498,6 @@ func templatesHandler(w http.ResponseWriter, r *http.Request) {
 func templateHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	// 提取 ID
 	path := r.URL.Path
 	prefix := "/api/v1/templates/"
 	if !strings.HasPrefix(path, prefix) {
@@ -525,7 +586,11 @@ func (a *App) loadConsoleConfig() error {
 
 	data, err := os.ReadFile(filePath)
 	if err != nil {
-		return fmt.Errorf("读取控制台配置文件失败: %w", err)
+		fmt.Printf("配置文件不存在，从内置默认配置释放: %s\n", filePath)
+		if err := os.WriteFile(filePath, defaultConsoleJSON, 0644); err != nil {
+			return fmt.Errorf("释放默认配置文件失败: %w", err)
+		}
+		data = defaultConsoleJSON
 	}
 
 	consoleMu.Lock()

@@ -6,7 +6,7 @@ import { useTheme } from "../hooks/useTheme";
 
 const navItems = [
   { href: "/", icon: Home, label: "主页" },
-  { href: "/logs", icon: ScrollText, label: "操作日志" },
+  { href: "/logs", icon: ScrollText, label: "日志" },
   { href: "/settings", icon: Settings, label: "设置" },
   { href: "/about", icon: Info, label: "关于" },
 ];

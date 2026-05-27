@@ -1,49 +1,262 @@
 {
   "help_text": "## 按钮帮助\n- **长按任意按钮** 可查看该按钮的详细说明\n\n## 使用提示\n- 确保手机和电脑在同一局域网\n- 文本会通过剪贴板粘贴到电脑当前焦点\n- 支持正则替换规则（在控制台配置中管理）",
-  "maxLogCount": 100,
   "inputButtons": [
-    {"id": "send", "label": "发送", "variant": "primary", "help": "将输入框文本发送到电脑，支持正则替换规则", "commands": [{"action": "text", "text": "{{input}}", "applyRules": true}]},
-    {"id": "enter", "label": "回车", "variant": "info", "help": "发送回车键", "commands": [{"action": "key", "key": "enter"}]},
-    {"id": "submit", "label": "提交", "variant": "info", "help": "发送文本并自动回车", "commands": [{"action": "text", "text": "{{input}}", "applyRules": true}, {"action": "key", "key": "enter"}]}
+    {
+      "id": "send",
+      "label": "发送",
+      "variant": "primary",
+      "commands": [
+        {
+          "action": "text",
+          "text": "{{input}}",
+          "applyRules": true
+        }
+      ]
+    },
+    {
+      "id": "enter",
+      "label": "回车",
+      "variant": "info",
+      "commands": [
+        {
+          "action": "key",
+          "key": "enter"
+        }
+      ]
+    },
+    {
+      "id": "submit",
+      "label": "提交",
+      "variant": "info",
+      "commands": [
+        {
+          "action": "text",
+          "text": "{{input}}",
+          "applyRules": true
+        },
+        { "action": "delay", "ms": 500 },
+        {
+          "action": "key",
+          "key": "enter"
+        }
+      ]
+    }
   ],
   "actionGroups": [
     {
       "title": "光标控制",
       "columns": 4,
       "buttons": [
-        {"id": "left", "label": "←", "variant": "cursor", "help": "光标左移一格", "commands": [{"action": "key", "key": "left"}]},
-        {"id": "up", "label": "↑", "variant": "cursor", "help": "光标上移一行", "commands": [{"action": "key", "key": "up"}]},
-        {"id": "down", "label": "↓", "variant": "cursor", "help": "光标下移一行", "commands": [{"action": "key", "key": "down"}]},
-        {"id": "right", "label": "→", "variant": "cursor", "help": "光标右移一格", "commands": [{"action": "key", "key": "right"}]},
-        {"id": "delete", "label": "删除", "variant": "danger", "help": "删除光标前的一个字符", "commands": [{"action": "key", "key": "backspace"}]},
-        {"id": "undo", "label": "撤销", "variant": "secondary", "help": "撤销上一次发送的文本或按键", "commands": [{"action": "undo"}]}
+        {
+          "id": "left",
+          "label": "←",
+          "variant": "cursor",
+          "commands": [
+            {
+              "action": "key",
+              "key": "left"
+            }
+          ]
+        },
+        {
+          "id": "up",
+          "label": "↑",
+          "variant": "cursor",
+          "commands": [
+            {
+              "action": "key",
+              "key": "up"
+            }
+          ]
+        },
+        {
+          "id": "down",
+          "label": "↓",
+          "variant": "cursor",
+          "commands": [
+            {
+              "action": "key",
+              "key": "down"
+            }
+          ]
+        },
+        {
+          "id": "right",
+          "label": "→",
+          "variant": "cursor",
+          "commands": [
+            {
+              "action": "key",
+              "key": "right"
+            }
+          ]
+        },
+        {
+          "id": "delete",
+          "label": "删除",
+          "variant": "danger",
+          "commands": [
+            {
+              "action": "key",
+              "key": "backspace"
+            }
+          ]
+        },
+        {
+          "id": "undo",
+          "label": "撤销",
+          "variant": "secondary",
+          "commands": [
+            {
+              "action": "undo"
+            }
+          ]
+        }
       ]
     },
     {
       "title": "符号",
       "columns": 4,
       "buttons": [
-        {"id": "symbol1", "label": "（）", "variant": "symbol", "help": "用圆括号包裹输入文本并发送", "commands": [{"action": "text", "text": "({{input}})"}]},
-        {"id": "symbol2", "label": "\"\"", "variant": "symbol", "help": "用双引号包裹输入文本并发送", "commands": [{"action": "text", "text": "\"{{input}}\""}]},
-        {"id": "symbol3", "label": "「」", "variant": "symbol", "help": "用书名号包裹输入文本并发送", "commands": [{"action": "text", "text": "「{{input}}」"}]},
-        {"id": "symbol4", "label": "[]", "variant": "symbol", "help": "用方括号包裹输入文本并发送", "commands": [{"action": "text", "text": "[{{input}}]"}]}
+        {
+          "id": "symbol1",
+          "label": "（）",
+          "variant": "symbol",
+          "commands": [
+            {
+              "action": "text",
+              "text": "({{input}})"
+            }
+          ]
+        },
+        {
+          "id": "symbol2",
+          "label": "\"\"",
+          "variant": "symbol",
+          "commands": [
+            {
+              "action": "text",
+              "text": "\"{{input}}\""
+            }
+          ]
+        },
+        {
+          "id": "symbol3",
+          "label": "「」",
+          "variant": "symbol",
+          "commands": [
+            {
+              "action": "text",
+              "text": "「{{input}}」"
+            }
+          ]
+        },
+        {
+          "id": "symbol4",
+          "label": "[]",
+          "variant": "symbol",
+          "commands": [
+            {
+              "action": "text",
+              "text": "[{{input}}]"
+            }
+          ]
+        }
       ]
     },
     {
       "title": "Qwen Code",
-      "columns": 2,
+      "columns": 3,
       "buttons": [
-        {"id": "compress", "label": "压缩", "variant": "secondary", "help": "压缩对话历史，节省 Tokens", "commands": [{"action": "text", "text": "/compress"}, {"action": "key", "key": "enter"}]},
-        {"id": "btw", "label": "提问", "variant": "info", "help": "发送 /btw 快捷提问（使用输入框内容）", "requireInput": true, "commands": [{"action": "text", "text": "/btw {{input}}"}, {"action": "key", "key": "enter"}]}
+        {
+          "id": "compress",
+          "label": "压缩",
+          "variant": "secondary",
+          "commands": [
+            {
+              "action": "text",
+              "text": "/compress"
+            },
+            {
+              "action": "key",
+              "key": "enter"
+            }
+          ]
+        },
+        {
+          "id": "btw",
+          "label": "提问",
+          "variant": "info",
+          "commands": [
+            {
+              "action": "text",
+              "text": "/btw {{input}}"
+            },
+            {
+              "action": "key",
+              "key": "enter"
+            }
+          ]
+        },
+        {
+          "id": "tab",
+          "label": "切换模式",
+          "variant": "info",
+          "commands": [
+            {
+              "action": "key",
+              "key": "tab"
+            }
+          ]
+        },
+        {
+          "id": "clear",
+          "label": "新会话",
+          "variant": "info",
+          "commands": [
+            {
+              "action": "text",
+              "text": "/new"
+            },
+            {
+              "action": "key",
+              "key": "enter"
+            }
+          ]
+        }        
       ]
     }
   ],
   "rules": [
-    {"pattern": "毫安时", "replacement": "mAh", "enabled": true},
-    {"pattern": "赫兹", "replacement": "Hz", "enabled": true},
-    {"pattern": "伏特", "replacement": "V", "enabled": true},
-    {"pattern": "(艾特)\\s*(QQ)\\s*点", "replacement": "@qq.", "enabled": true},
-    {"pattern": "(艾特)\\s*([一幺]六三)\\s*点", "replacement": "@163.", "enabled": true},
-    {"pattern": "(艾特)\\s*(\\w+)\\s*(点)\\s*(\\w+)", "replacement": "@\\2.\\4", "enabled": true}
+    {
+      "pattern": "毫安时",
+      "replacement": "mAh",
+      "enabled": true
+    },
+    {
+      "pattern": "赫兹",
+      "replacement": "Hz",
+      "enabled": true
+    },
+    {
+      "pattern": "伏特",
+      "replacement": "V",
+      "enabled": true
+    },
+    {
+      "pattern": "(艾特)\\s*(QQ)\\s*点",
+      "replacement": "@qq.",
+      "enabled": true
+    },
+    {
+      "pattern": "(艾特)\\s*([一幺]六三)\\s*点",
+      "replacement": "@163.",
+      "enabled": true
+    },
+    {
+      "pattern": "(艾特)\\s*(\\w+)\\s*(点)\\s*(\\w+)",
+      "replacement": "@\\2.\\4",
+      "enabled": true
+    }
   ]
 }

@@ -24,6 +24,9 @@ frontend/wailsjs/
 *.swp
 *.swo
 
+# AI Tools
+.qwen/
+
 # OS
 Thumbs.db
 Desktop.ini

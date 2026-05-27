@@ -5,6 +5,7 @@ import { Badge } from "../components/ui/badge";
 import { Separator } from "../components/ui/separator";
 import { GetVersion } from "../../wailsjs/go/main/App";
 import { useEffect, useState } from "react";
+import PageHeader from "../components/PageHeader";
 
 export default function AboutPage() {
   const [version, setVersion] = useState("");
@@ -18,13 +19,10 @@ export default function AboutPage() {
   }, []);
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden">
-      <header className="flex items-center gap-2 px-6 py-3 border-b border-border bg-card/50 backdrop-blur">
-        <Info className="h-4 w-4 text-primary" />
-        <h2 className="text-sm font-semibold">关于</h2>
-      </header>
+    <div className="flex flex-col flex-1 min-h-0">
+      <PageHeader icon={Info} title="关于" />
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="flex-1 overflow-y-auto min-h-0 p-4 space-y-4">
         {/* App Info */}
         <Card>
           <CardHeader>

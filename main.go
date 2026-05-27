@@ -1,85 +1,113 @@
 package main
 
 import (
-	"context"
 	"embed"
 	"fmt"
+	"net"
+	"os"
+	"path/filepath"
 
-	"github.com/getlantern/systray"
-	"github.com/wailsapp/wails/v2"
-	"github.com/wailsapp/wails/v2/pkg/options"
-	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
+	"github.com/veryinf/easy-input/backend/database"
+	"github.com/wailsapp/wails/v3/pkg/application"
+	"github.com/wailsapp/wails/v3/pkg/events"
 )
 
 //go:embed all:frontend/dist
 var assets embed.FS
 
-var appInstance *App
-var appCtx context.Context
+//go:embed build/appicon.png
+var appIconPNG []byte
+
+var mainWindow application.Window
 
 func main() {
-	app := NewApp()
-	appInstance = app
+	exeDir := getExecDir()
 
-	// 启动系统托盘
-	go setupSystray()
+	// 初始化数据库（用于读取端口等配置）
+	dbPath := filepath.Join(exeDir, "db", "typebridge.db")
+	if err := database.Init(dbPath); err != nil {
+		fmt.Printf("警告：初始化数据库失败 %v\n", err)
+	}
 
-	err := wails.Run(&options.App{
-		Title:  "Type Bridge - 手机电脑输入同步",
-		Width:  1024,
-		Height: 700,
-		AssetServer: &assetserver.Options{
-			Assets: assets,
+	// 读取端口配置
+	port := database.GetIntConfig("httpPort", Port)
+	if port > 0 {
+		Port = port
+	}
+
+	// 创建 Wails 应用
+	app := application.New(application.Options{
+		Name:        "Type Bridge",
+		Description: "手机电脑输入同步",
+		Icon:        appIconPNG,
+		Assets: application.AssetOptions{
+			Handler: application.AssetFileServerFS(assets),
 		},
-		BackgroundColour: &options.RGBA{R: 102, G: 126, B: 234, A: 1},
-		OnStartup: func(ctx context.Context) {
-			app.startup(ctx)
-			appCtx = ctx
+		Services: []application.Service{
+			application.NewService(&App{}),
 		},
-		Bind: []interface{}{
-			app,
+		Mac: application.MacOptions{
+			ActivationPolicy: application.ActivationPolicyAccessory,
 		},
 	})
 
+	// 环境检测：端口是否可用
+	if err := checkPortAvailable(port); err != nil {
+		app.Dialog.Error().
+			SetTitle("Type Bridge - 启动失败").
+			SetMessage(fmt.Sprintf("端口 %d 已被其他程序占用，请关闭占用该端口的程序后重试。\n\n错误详情: %v", port, err)).
+			Show()
+		os.Exit(1)
+	}
+
+	// 创建主窗口
+	mainWindow = app.Window.NewWithOptions(application.WebviewWindowOptions{
+		Title:  "Type Bridge - 手机电脑输入同步",
+		Width:  1024,
+		Height: 700,
+		URL:    "/",
+	})
+
+	// 窗口关闭时最小化到托盘（而非退出）
+	mainWindow.RegisterHook(events.Common.WindowClosing, func(e *application.WindowEvent) {
+		minimize, _ := database.GetConfig("minimizeToTray")
+		if minimize == "" || minimize == "true" {
+			mainWindow.Hide()
+			e.Cancel()
+		}
+	})
+
+	// 系统托盘
+	setupSystemTray(app)
+
+	err := app.Run()
 	if err != nil {
 		println("Error:", err.Error())
+		os.Exit(1)
 	}
 }
 
-func setupSystray() {
-	systray.Run(onSystrayReady, onSystrayExit)
+func setupSystemTray(app *application.App) {
+	systemTray := app.SystemTray.New()
+	systemTray.SetIcon(appIconPNG)
+	systemTray.SetTooltip("Type Bridge - 手机电脑输入同步")
+
+	menu := app.NewMenu()
+	menu.Add("显示窗口").OnClick(func(ctx *application.Context) {
+		mainWindow.Show()
+	})
+	menu.AddSeparator()
+	menu.Add("退出").OnClick(func(ctx *application.Context) {
+		app.Quit()
+	})
+	systemTray.SetMenu(menu)
 }
 
-func onSystrayReady() {
-	// 设置托盘图标（这里使用默认图标，实际项目中可以使用自定义图标）
-	systray.SetIcon([]byte{0x00, 0x00, 0x01, 0x00, 0x01, 0x00, 0x10, 0x10, 0x00, 0x00, 0x01, 0x00, 0x08, 0x00, 0x20, 0x20, 0x00, 0x00, 0x01, 0x00, 0x04, 0x00, 0x40, 0x40, 0x00, 0x00, 0x01, 0x00, 0x02, 0x00, 0x80, 0x80, 0x00, 0x00, 0x02, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00, 0x00, 0x04, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10, 0x00, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x20, 0x00, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x40, 0x00, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0x00, 0x20, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x40, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x05, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00})
-	systray.SetTitle("Type Bridge")
-	systray.SetTooltip("Type Bridge - 手机电脑输入同步")
-
-	// 添加显示窗口菜单项
-	showMenu := systray.AddMenuItem("显示窗口", "显示应用窗口")
-	// 添加退出菜单项
-	quitMenu := systray.AddMenuItem("退出", "退出应用")
-
-	// 处理菜单点击事件
-	go func() {
-		for {
-			select {
-			case <-showMenu.ClickedCh:
-				if appInstance != nil {
-					appInstance.ShowWindow()
-				}
-			case <-quitMenu.ClickedCh:
-				systray.Quit()
-				if appInstance != nil {
-					appInstance.QuitApp()
-				}
-			}
-		}
-	}()
-}
-
-func onSystrayExit() {
-	// 清理资源
-	fmt.Println("Systray exited")
+func checkPortAvailable(port int) error {
+	ln, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
+	if err != nil {
+		return err
+	}
+	ln.Close()
+	return nil
 }

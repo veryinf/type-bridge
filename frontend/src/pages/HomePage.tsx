@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
 import { QRCodeSVG } from "qrcode.react";
-import { Copy, ExternalLink, Minus, Terminal, Keyboard, CornerDownLeft, Undo2, MousePointer } from "lucide-react";
+import { Copy, ExternalLink, Terminal, Keyboard, CornerDownLeft, Undo2, MousePointer } from "lucide-react";
 import { GetLanIPs, GetServerPort, GetVersion } from "../../wailsjs/go/main/App";
-import { WindowHide } from "../../wailsjs/runtime/runtime";
+import { BrowserOpenURL } from "../../wailsjs/runtime/runtime";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
+import PageHeader from "../components/PageHeader";
 
 export default function HomePage() {
   const [ips, setIps] = useState<string[]>([]);
@@ -38,21 +39,11 @@ export default function HomePage() {
   const copyToClipboard = () => navigator.clipboard.writeText(accessURL);
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden">
-      {/* Header */}
-      <header className="flex items-center justify-between px-6 py-3 border-b border-border bg-card/50 backdrop-blur">
-        <div className="flex items-center gap-2">
-          <Terminal className="h-4 w-4 text-primary" />
-          <h2 className="text-sm font-semibold">主页</h2>
-          <Badge variant="success">v{version}</Badge>
-        </div>
-        <Button variant="ghost" size="icon" onClick={() => { try { WindowHide(); } catch {} }} title="最小化到托盘">
-          <Minus className="h-4 w-4" />
-        </Button>
-      </header>
+    <div className="flex flex-col flex-1 min-h-0">
+      <PageHeader icon={Terminal} title="主页" extra={<Badge variant="success">v{version}</Badge>} />
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto p-6">
+      <div className="flex-1 overflow-y-auto min-h-0 p-6">
         <div className="max-w-xl mx-auto space-y-5">
           {/* QR Card */}
           <Card>
@@ -91,12 +82,10 @@ export default function HomePage() {
                   <Copy className="h-3.5 w-3.5" />
                   复制地址
                 </Button>
-                <a href={accessURL} target="_blank" rel="noopener noreferrer" className="flex-1">
-                  <Button variant="secondary" size="sm" className="w-full gap-1.5">
-                    <ExternalLink className="h-3.5 w-3.5" />
-                    打开网页
-                  </Button>
-                </a>
+                <Button variant="secondary" size="sm" className="flex-1 gap-1.5" onClick={() => BrowserOpenURL(accessURL)}>
+                  <ExternalLink className="h-3.5 w-3.5" />
+                  打开网页
+                </Button>
               </div>
             </CardContent>
           </Card>

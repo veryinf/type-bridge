@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from "react";
+import { ScrollText } from "lucide-react";
 import { GetLogs } from "../../wailsjs/go/main/App";
+import PageHeader from "../components/PageHeader";
 
 interface LogEntry {
   time: string;
@@ -28,6 +30,8 @@ const typeLabels: Record<string, string> = {
 export default function LogPage() {
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const logsEndRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const autoScrollRef = useRef(true);
 
   useEffect(() => {
     const fetchLogs = () => {
@@ -41,12 +45,21 @@ export default function LogPage() {
   }, []);
 
   useEffect(() => {
-    logsEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (autoScrollRef.current) {
+      logsEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
   }, [logs]);
 
+  const handleScroll = () => {
+    const el = scrollRef.current;
+    if (!el) return;
+    autoScrollRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 50;
+  };
+
   return (
-    <div className="h-screen overflow-hidden bg-[#0d1117] p-4 font-mono text-sm">
-      <div className="h-full overflow-y-auto">
+    <div className="flex flex-col flex-1 min-h-0">
+      <PageHeader icon={ScrollText} title="日志" />
+      <div ref={scrollRef} onScroll={handleScroll} className="flex-1 overflow-y-auto bg-[#0d1117] p-4 font-mono text-sm">
         {logs.length === 0 ? (
           <div className="text-[#8b949e]">等待操作...</div>
         ) : (

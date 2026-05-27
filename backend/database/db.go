@@ -80,6 +80,10 @@ func createTables() error {
 			type TEXT NOT NULL,
 			content TEXT NOT NULL
 		)`,
+		`CREATE TABLE IF NOT EXISTS config (
+			key TEXT PRIMARY KEY,
+			value TEXT NOT NULL
+		)`,
 	}
 
 	for _, query := range queries {
