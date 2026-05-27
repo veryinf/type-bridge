@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { Copy, ExternalLink, Terminal, Keyboard, CornerDownLeft, Undo2, MousePointer } from "lucide-react";
-import { GetLanIPs, GetServerPort, GetVersion } from "../../wailsjs/go/main/App";
-import { BrowserOpenURL } from "../../wailsjs/runtime/runtime";
+import { GetLanIPs, GetServerPort, GetVersion } from "../../bindings/github.com/veryinf/easy-input/app";
+import { Browser } from "@wailsio/runtime";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
@@ -82,7 +82,7 @@ export default function HomePage() {
                   <Copy className="h-3.5 w-3.5" />
                   复制地址
                 </Button>
-                <Button variant="secondary" size="sm" className="flex-1 gap-1.5" onClick={() => BrowserOpenURL(accessURL)}>
+                <Button variant="secondary" size="sm" className="flex-1 gap-1.5" onClick={() => Browser.OpenURL(accessURL)}>
                   <ExternalLink className="h-3.5 w-3.5" />
                   打开网页
                 </Button>

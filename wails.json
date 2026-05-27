@@ -4,8 +4,7 @@
   "outputfilename": "TypeBridge",
   "frontend:install": "pnpm install",
   "frontend:build": "pnpm run build",
-  "frontend:dev:watcher": "pnpm run dev",
-  "frontend:dev:serverUrl": "auto",
+  "frontend:dev:serverUrl": "http://localhost:9245",
   "preBuildHooks": {
     "*/*": "cmd /c call ../../build-remote.cmd"
   },

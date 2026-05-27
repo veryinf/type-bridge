@@ -6,7 +6,8 @@ import tailwindcss from '@tailwindcss/postcss'
 export default defineConfig({
   plugins: [react()],
   server: {
-    port: 3010
+    port: 9245,
+    host: '127.0.0.1',
   },
   css: {
     postcss: {

@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../co
 import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
 import { Separator } from "../components/ui/separator";
-import { GetVersion } from "../../wailsjs/go/main/App";
+import { GetVersion } from "../../bindings/github.com/veryinf/easy-input/app";
 import { useEffect, useState } from "react";
 import PageHeader from "../components/PageHeader";
 

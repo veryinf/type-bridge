@@ -4,8 +4,11 @@ import (
 	"embed"
 	"fmt"
 	"net"
+	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/veryinf/easy-input/backend/database"
 	"github.com/wailsapp/wails/v3/pkg/application"
@@ -34,6 +37,9 @@ func main() {
 	if port > 0 {
 		Port = port
 	}
+
+	// 开发模式下等待 Vite dev server 就绪
+	waitForDevServer()
 
 	// 创建 Wails 应用
 	app := application.New(application.Options{
@@ -110,4 +116,43 @@ func checkPortAvailable(port int) error {
 	}
 	ln.Close()
 	return nil
+}
+
+// waitForDevServer 在开发模式下等待 Vite dev server 就绪。
+// Wails v3 内置的等待时间较短（5秒），Vite 冷启动可能需要更长时间。
+func waitForDevServer() {
+	devServerURL := os.Getenv("FRONTEND_DEVSERVER_URL")
+	if devServerURL == "" {
+		return
+	}
+
+	u, err := url.Parse(devServerURL)
+	if err != nil {
+		return
+	}
+
+	client := http.Client{Timeout: 2 * time.Second}
+	addr := u.Host
+	fmt.Printf("等待前端开发服务器就绪 %s ...\n", addr)
+
+	for i := 0; i < 60; i++ {
+		conn, err := net.DialTimeout("tcp", addr, 1*time.Second)
+		if err == nil {
+			conn.Close()
+			fmt.Println("前端开发服务器已就绪")
+			return
+		}
+		time.Sleep(500 * time.Millisecond)
+		// 同时尝试 HTTP 连接
+		if i%4 == 0 {
+			resp, err := client.Get(devServerURL)
+			if err == nil {
+				resp.Body.Close()
+				fmt.Println("前端开发服务器已就绪")
+				return
+			}
+		}
+	}
+
+	fmt.Println("警告：前端开发服务器等待超时，继续启动...")
 }

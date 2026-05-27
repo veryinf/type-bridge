@@ -26,6 +26,9 @@ importers:
       '@tailwindcss/postcss':
         specifier: ^4.2.2
         version: 4.3.0
+      '@wailsio/runtime':
+        specifier: 3.0.0-alpha.79
+        version: 3.0.0-alpha.79
       class-variance-authority:
         specifier: ^0.7.1
         version: 0.7.1
@@ -700,6 +703,9 @@ packages:
     engines: {node: ^14.18.0 || >=16.0.0}
     peerDependencies:
       vite: ^3.0.0
+
+  '@wailsio/runtime@3.0.0-alpha.79':
+    resolution: {integrity: sha512-NITzxKmJsMEruc39L166lbPJVECxzcbdqpHVqOOF7Cu/7Zqk/e3B/gNpkUjhNyo5rVb3V1wpS8oEgLUmpu1cwA==}
 
   aria-hidden@1.2.6:
     resolution: {integrity: sha512-ik3ZgC9dY/lYVVM++OISsaYDeg1tb0VtP5uL3ouh1koGOaUMDPpbFIei4JkFimWUFPn90sbMNMXQAIVOlnYKJA==}
@@ -1839,6 +1845,8 @@ snapshots:
       vite: 3.0.7
     transitivePeerDependencies:
       - supports-color
+
+  '@wailsio/runtime@3.0.0-alpha.79': {}
 
   aria-hidden@1.2.6:
     dependencies:

@@ -3,7 +3,7 @@ import { Settings, Globe, Palette, Save, ScrollText } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
-import { GetServerPort, GetMaxLogCount, SetMaxLogCount, SetServerPort, GetMinimizeToTray, SetMinimizeToTray } from "../../wailsjs/go/main/App";
+import { GetServerPort, GetMaxLogCount, SetMaxLogCount, SetServerPort, GetMinimizeToTray, SetMinimizeToTray } from "../../bindings/github.com/veryinf/easy-input/app";
 import { useTheme } from "../hooks/useTheme";
 import PageHeader from "../components/PageHeader";
 

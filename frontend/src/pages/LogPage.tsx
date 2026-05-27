@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { ScrollText } from "lucide-react";
-import { GetLogs } from "../../wailsjs/go/main/App";
+import { GetLogs } from "../../bindings/github.com/veryinf/easy-input/app";
 import PageHeader from "../components/PageHeader";
 
 interface LogEntry {
