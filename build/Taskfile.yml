@@ -97,28 +97,50 @@ tasks:
     deps:
       - task: go:mod:tidy
     cmds:
-      - go build -buildvcs=false -ldflags="-s -w -H windowsgui" -o {{.BIN_DIR}}/{{.BIN_NAME}}.exe
+      - |
+        if [ "$(uname)" = "Darwin" ]; then
+          go build -buildvcs=false -ldflags="-s -w" -o {{.BIN_DIR}}/{{.BIN_NAME}}
+        else
+          go build -buildvcs=false -ldflags="-s -w -H windowsgui" -o {{.BIN_DIR}}/{{.BIN_NAME}}.exe
+        fi
     env:
       CGO_ENABLED: 1
+      MACOSX_DEPLOYMENT_TARGET: "13.0"
 
   build:go:dev:
     summary: Builds the Go application with dev binary name
     deps:
       - task: go:mod:tidy
     cmds:
-      - go build -buildvcs=false -gcflags=all="-l" -o {{.BIN_DIR}}/{{.APP_NAME}}-dev.exe
+      - |
+        if [ "$(uname)" = "Darwin" ]; then
+          go build -buildvcs=false -gcflags=all="-l" -o {{.BIN_DIR}}/{{.APP_NAME}}-dev
+        else
+          go build -buildvcs=false -gcflags=all="-l" -o {{.BIN_DIR}}/{{.APP_NAME}}-dev.exe
+        fi
     env:
       CGO_ENABLED: 1
+      MACOSX_DEPLOYMENT_TARGET: "13.0"
 
   run:
     summary: Runs the application
     cmds:
-      - '{{.BIN_DIR}}/{{.BIN_NAME}}.exe'
+      - |
+        if [ "$(uname)" = "Darwin" ]; then
+          {{.BIN_DIR}}/{{.BIN_NAME}}
+        else
+          {{.BIN_DIR}}/{{.BIN_NAME}}.exe
+        fi
 
   run:dev:
     summary: Runs the dev application
     cmds:
-      - '{{.BIN_DIR}}/{{.APP_NAME}}-dev.exe'
+      - |
+        if [ "$(uname)" = "Darwin" ]; then
+          {{.BIN_DIR}}/{{.APP_NAME}}-dev
+        else
+          {{.BIN_DIR}}/{{.APP_NAME}}-dev.exe
+        fi
 
   update:build-assets:
     summary: Updates the build assets

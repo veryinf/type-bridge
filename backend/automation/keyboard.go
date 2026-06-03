@@ -27,7 +27,7 @@ func PasteText(text string) {
 	originalClipboard, _ := robotgo.ReadAll()
 
 	robotgo.WriteAll(text)
-	robotgo.KeyTap("v", "ctrl")
+	platformPaste()
 
 	if originalClipboard != "" {
 		robotgo.WriteAll(originalClipboard)
