@@ -84,7 +84,7 @@
 
 ### 控制台配置
 
-程序使用 `default_console.json` 文件驱动手机端控制台的按钮布局和替换规则。文件结构如下：
+程序使用 `console.json` 文件驱动手机端控制台的按钮布局和替换规则。文件结构如下：
 
 ```json
 {
@@ -138,7 +138,7 @@
 
 ### 替换规则
 
-在 `default_console.json` 的 `rules` 数组中配置：
+在 `console.json` 的 `rules` 数组中配置：
 
 ```json
 {
@@ -217,7 +217,7 @@ GET    /api/v1/version            # {"version": "1.0.0"}
 1. **快速输入** - 输入常用短语后点击"发送"，比打字更快
 2. **命令组合** - 一个按钮可配置多条命令，如"发送文字 + 延迟 + 回车"
 3. **模板管理** - 在桌面端管理常用模板，手机端一键调用
-4. **自定义布局** - 编辑 `default_console.json` 自定义手机端按钮布局
+4. **自定义布局** - 编辑 `console.json` 自定义手机端按钮布局
 5. **符号配对** - 输入文字后点击符号按钮，自动在文字两端添加符号
 6. **全屏编辑** - 使用全屏编辑器输入长文本，支持多行编辑
 
@@ -241,7 +241,7 @@ A: 请检查：
 ### Q: 替换规则不生效？
 
 A: 请检查：
-1. `default_console.json` 中 `rules` 数组格式是否正确
+1. `console.json` 中 `rules` 数组格式是否正确
 2. 规则的 `enabled` 字段是否为 `true`
 3. 保存配置后规则会自动重新加载，无需重启程序
 
@@ -266,7 +266,7 @@ A:
 easy-input/
 ├── main.go                         # 入口文件：Wails 应用启动、系统托盘
 ├── app.go                          # 核心逻辑：Wails 绑定方法、HTTP 服务器、命令执行
-├── default_console.json            # 控制台配置（按钮布局 + 替换规则）
+├── console.json                  # 控制台配置（按钮布局 + 替换规则）
 ├── build-remote.cmd                # 远程界面构建脚本
 ├── wails.json                      # Wails 项目配置
 ├── go.mod / go.sum                 # Go 依赖管理

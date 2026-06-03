@@ -85,19 +85,40 @@ tasks:
     cmds:
       - pnpm dev --port {{.VITE_PORT}} --strictPort
 
+  dev:remote:
+    summary: Runs the remote in development mode
+    dir: remote
+    cmds:
+      - pnpm install
+      - pnpm dev --port 3020 --strictPort
+
   build:go:
-    summary: Builds the Go application for development
+    summary: Builds the Go application
     deps:
       - task: go:mod:tidy
     cmds:
-      - go build -buildvcs=false -gcflags=all="-l" -o {{.BIN_DIR}}/TypeBridge.exe
+      - go build -buildvcs=false -ldflags="-s -w -H windowsgui" -o {{.BIN_DIR}}/{{.BIN_NAME}}.exe
+    env:
+      CGO_ENABLED: 1
+
+  build:go:dev:
+    summary: Builds the Go application with dev binary name
+    deps:
+      - task: go:mod:tidy
+    cmds:
+      - go build -buildvcs=false -gcflags=all="-l" -o {{.BIN_DIR}}/{{.APP_NAME}}-dev.exe
     env:
       CGO_ENABLED: 1
 
   run:
     summary: Runs the application
     cmds:
-      - '{{.BIN_DIR}}/TypeBridge.exe'
+      - '{{.BIN_DIR}}/{{.BIN_NAME}}.exe'
+
+  run:dev:
+    summary: Runs the dev application
+    cmds:
+      - '{{.BIN_DIR}}/{{.APP_NAME}}-dev.exe'
 
   update:build-assets:
     summary: Updates the build assets

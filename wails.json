@@ -2,12 +2,7 @@
   "$schema": "https://wails.io/schemas/config.v3.json",
   "name": "Type Bridge",
   "outputfilename": "TypeBridge",
-  "frontend:install": "pnpm install",
-  "frontend:build": "pnpm run build",
   "frontend:dev:serverUrl": "http://localhost:9245",
-  "preBuildHooks": {
-    "*/*": "cmd /c call ../../build-remote.cmd"
-  },
   "author": {
     "name": "veryinf",
     "email": "345435142@qq.com"

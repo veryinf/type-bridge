@@ -2,6 +2,7 @@ package main
 
 import (
 	"embed"
+	"flag"
 	"fmt"
 	"net"
 	"net/http"
@@ -26,22 +27,12 @@ var mainWindow application.Window
 func main() {
 	exeDir := getExecDir()
 
-	// 初始化数据库（用于读取端口等配置）
-	dbPath := filepath.Join(exeDir, "db", "typebridge.db")
-	if err := database.Init(dbPath); err != nil {
-		fmt.Printf("警告：初始化数据库失败 %v\n", err)
-	}
+	// 解析命令行参数
+	portFlag := flag.Int("port", 0, "HTTP 服务端口（覆盖数据库配置）")
+	flag.Parse()
 
-	// 读取端口配置
-	port := database.GetIntConfig("httpPort", Port)
-	if port > 0 {
-		Port = port
-	}
-
-	// 开发模式下等待 Vite dev server 就绪
-	waitForDevServer()
-
-	// 创建 Wails 应用
+	// 创建 Wails 应用（先创建以获取 dialog 能力）
+	myApp := &App{}
 	app := application.New(application.Options{
 		Name:        "Type Bridge",
 		Description: "手机电脑输入同步",
@@ -50,12 +41,32 @@ func main() {
 			Handler: application.AssetFileServerFS(assets),
 		},
 		Services: []application.Service{
-			application.NewService(&App{}),
+			application.NewService(myApp),
 		},
 		Mac: application.MacOptions{
 			ActivationPolicy: application.ActivationPolicyAccessory,
 		},
 	})
+	myApp.wails = app
+
+	// 初始化数据库（用于读取端口等配置）
+	dbPath := filepath.Join(exeDir, "db", "typebridge.db")
+	if err := database.Init(dbPath); err != nil {
+		app.Dialog.Error().
+			SetTitle("Type Bridge - 启动失败").
+			SetMessage(fmt.Sprintf("数据库初始化失败，请检查应用目录权限。\n\n错误详情: %v", err)).
+			Show()
+		os.Exit(1)
+	}
+
+	// 确定端口：命令行 > 数据库 > 默认值
+	port := Port
+	if *portFlag > 0 {
+		port = *portFlag
+	} else if dbPort := database.GetIntConfig("httpPort", 0); dbPort > 0 {
+		port = dbPort
+	}
+	Port = port
 
 	// 环境检测：端口是否可用
 	if err := checkPortAvailable(port); err != nil {
@@ -66,6 +77,9 @@ func main() {
 		os.Exit(1)
 	}
 
+	// 开发模式下等待 Vite dev server 就绪
+	waitForDevServer()
+
 	// 创建主窗口
 	mainWindow = app.Window.NewWithOptions(application.WebviewWindowOptions{
 		Title:  "Type Bridge - 手机电脑输入同步",
@@ -74,12 +88,14 @@ func main() {
 		URL:    "/",
 	})
 
-	// 窗口关闭时最小化到托盘（而非退出）
+	// 窗口关闭时根据配置决定行为
 	mainWindow.RegisterHook(events.Common.WindowClosing, func(e *application.WindowEvent) {
 		minimize, _ := database.GetConfig("minimizeToTray")
 		if minimize == "" || minimize == "true" {
 			mainWindow.Hide()
 			e.Cancel()
+		} else {
+			app.Quit()
 		}
 	})
 
@@ -98,6 +114,10 @@ func setupSystemTray(app *application.App) {
 	systemTray.SetIcon(appIconPNG)
 	systemTray.SetTooltip("Type Bridge - 手机电脑输入同步")
 
+	// 左键点击切换主窗口显示/隐藏
+	systemTray.AttachWindow(mainWindow)
+
+	// 右键菜单
 	menu := app.NewMenu()
 	menu.Add("显示窗口").OnClick(func(ctx *application.Context) {
 		mainWindow.Show()

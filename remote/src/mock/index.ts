@@ -1,5 +1,5 @@
 import { ConsoleConfig, Command } from "../types/layout";
-import defaultConfig from "../../../default_console.json";
+import defaultConfig from "../../../console.json";
 
 const MOCK_CONFIG = defaultConfig as unknown as ConsoleConfig;
 

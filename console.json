@@ -166,7 +166,7 @@
     },
     {
       "title": "Qwen Code",
-      "columns": 3,
+      "columns": 4,
       "buttons": [
         {
           "id": "compress",

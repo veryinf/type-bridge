@@ -23,7 +23,7 @@ import (
 //go:embed all:remote/dist
 var remoteAssets embed.FS
 
-//go:embed default_console.json
+//go:embed console.json
 var defaultConsoleJSON []byte
 
 var (
@@ -33,7 +33,8 @@ var (
 )
 
 type App struct {
-	ctx context.Context
+	ctx    context.Context
+	wails  *application.App
 }
 
 type Command struct {
@@ -68,7 +69,7 @@ type ActionGroup struct {
 	Buttons []ButtonConfig `json:"buttons"`
 }
 
-// ConsoleConfig 控制台配置（从 default_console.json 加载）
+// ConsoleConfig 控制台配置（从 console.json 加载）
 type ConsoleConfig struct {
 	HelpText     string               `json:"help_text"`
 	InputButtons []ButtonConfig       `json:"inputButtons"`
@@ -85,11 +86,9 @@ type ButtonConfig struct {
 }
 
 var (
-	consoleConfig ConsoleConfig
-	consoleMu     sync.RWMutex
-	consoleFile   = "default_console.json"
-	httpServer    *http.Server
-	serverMu      sync.Mutex
+	consoleFile = "console.json"
+	httpServer  *http.Server
+	serverMu    sync.Mutex
 )
 
 func NewApp() *App {
@@ -105,30 +104,33 @@ func (a *App) ServiceName() string {
 func (a *App) ServiceStartup(ctx context.Context, options application.ServiceOptions) error {
 	a.ctx = ctx
 
-	// 加载控制台配置
-	if err := a.loadConsoleConfig(); err != nil {
-		fmt.Printf("警告：加载控制台配置失败 %v\n", err)
-	} else {
-		fmt.Println("控制台配置加载成功")
+	// 加载控制台配置并初始化替换规则
+	config, err := readConsoleConfig()
+	if err != nil {
+		a.showDialog("Type Bridge - 配置错误",
+			fmt.Sprintf("加载控制台配置失败，将使用默认配置。\n\n错误详情: %v", err))
 	}
 
-	// 从控制台配置加载替换规则
-	if err := automation.LoadRulesFromConfig(consoleConfig.Rules); err != nil {
-		fmt.Printf("警告：加载替换规则失败 %v\n", err)
+	if err := automation.LoadRulesFromConfig(config.Rules); err != nil {
+		a.showDialog("Type Bridge - 规则错误",
+			fmt.Sprintf("加载替换规则失败。\n\n错误详情: %v", err))
 	}
 
-	// 从数据库读取端口配置
-	port := database.GetIntConfig("httpPort", Port)
-	if port > 0 {
-		Port = port
-	}
+	go startHTTPServer(Port)
 
-	go startHTTPServer(port)
-
-	fmt.Printf("已加载 %d 条替换规则\n", len(automation.Rules))
 	fmt.Printf("当前版本 v%s，项目地址：https://github.com/%s\n", CurrentVersion, GitHubRepo)
 
 	return nil
+}
+
+// showDialog 显示错误对话框
+func (a *App) showDialog(title, message string) {
+	if a.wails != nil {
+		a.wails.Dialog.Error().
+			SetTitle(title).
+			SetMessage(message).
+			Show()
+	}
 }
 
 // ServiceShutdown 应用关闭时调用
@@ -329,7 +331,6 @@ func startHTTPServer(port int) {
 	httpServer = srv
 	serverMu.Unlock()
 
-	fmt.Printf("手机访问地址：http://localhost%s/mobile.html\n", addr)
 	if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		fmt.Printf("HTTP 服务器错误: %v\n", err)
 	}
@@ -559,28 +560,20 @@ func consoleHandler(w http.ResponseWriter, r *http.Request) {
 
 	switch r.Method {
 	case http.MethodGet:
-		consoleMu.RLock()
-		defer consoleMu.RUnlock()
-		json.NewEncoder(w).Encode(consoleConfig)
-
-	case http.MethodPut:
-		var config ConsoleConfig
-		if err := json.NewDecoder(r.Body).Decode(&config); err != nil {
-			jsonResp(w, "failed", "请求格式错误")
-			return
-		}
-		if err := saveConsoleConfig(&config); err != nil {
+		config, err := readConsoleConfig()
+		if err != nil {
 			jsonResp(w, "failed", err.Error())
 			return
 		}
-		jsonResp(w, "success", "")
+		json.NewEncoder(w).Encode(config)
 
 	default:
 		jsonResp(w, "failed", "不支持的请求方法")
 	}
 }
 
-func (a *App) loadConsoleConfig() error {
+// readConsoleConfig 从文件读取控制台配置。文件不存在时释放内置默认配置。
+func readConsoleConfig() (ConsoleConfig, error) {
 	exeDir := getExecDir()
 	filePath := filepath.Join(exeDir, consoleFile)
 
@@ -588,50 +581,26 @@ func (a *App) loadConsoleConfig() error {
 	if err != nil {
 		fmt.Printf("配置文件不存在，从内置默认配置释放: %s\n", filePath)
 		if err := os.WriteFile(filePath, defaultConsoleJSON, 0644); err != nil {
-			return fmt.Errorf("释放默认配置文件失败: %w", err)
+			return ConsoleConfig{}, fmt.Errorf("释放默认配置文件失败: %w", err)
 		}
 		data = defaultConsoleJSON
 	}
 
-	consoleMu.Lock()
-	defer consoleMu.Unlock()
-	if err := json.Unmarshal(data, &consoleConfig); err != nil {
-		return fmt.Errorf("解析控制台配置文件失败: %w", err)
+	var config ConsoleConfig
+	if err := json.Unmarshal(data, &config); err != nil {
+		return ConsoleConfig{}, fmt.Errorf("解析控制台配置文件失败: %w", err)
 	}
-	return nil
-}
-
-func saveConsoleConfig(config *ConsoleConfig) error {
-	exeDir := getExecDir()
-	filePath := filepath.Join(exeDir, consoleFile)
-
-	data, err := json.MarshalIndent(config, "", "  ")
-	if err != nil {
-		return fmt.Errorf("序列化控制台配置失败: %w", err)
-	}
-
-	if err := os.WriteFile(filePath, data, 0644); err != nil {
-		return fmt.Errorf("写入控制台配置文件失败: %w", err)
-	}
-
-	consoleMu.Lock()
-	consoleConfig = *config
-	consoleMu.Unlock()
-
-	automation.LoadRulesFromConfig(config.Rules)
-	return nil
+	return config, nil
 }
 
 // GetConsoleConfig Wails 绑定：获取控制台配置
 func (a *App) GetConsoleConfig() ConsoleConfig {
-	consoleMu.RLock()
-	defer consoleMu.RUnlock()
-	return consoleConfig
-}
-
-// SaveConsoleConfig Wails 绑定：保存控制台配置
-func (a *App) SaveConsoleConfig(config ConsoleConfig) error {
-	return saveConsoleConfig(&config)
+	config, err := readConsoleConfig()
+	if err != nil {
+		fmt.Printf("读取控制台配置失败: %v\n", err)
+		return ConsoleConfig{}
+	}
+	return config
 }
 
 func trimSpace(s string) string {

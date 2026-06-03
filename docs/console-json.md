@@ -4,10 +4,7 @@ Console JSON 是 Type Bridge 手机端界面的核心配置文件，用于定义
 
 ## 配置文件位置
 
-- **默认配置**：`default_console.json`（项目根目录，随应用打包，不可修改）
-- **用户配置**：首次运行时自动复制到 `%APPDATA%/TypeBridge/console.json`（可自由修改）
-
-用户配置存在时优先使用，删除后恢复默认配置。
+- **默认配置**：`console.json`（项目根目录，随应用打包，首次运行时释放到 exe 目录）
 
 ---
 
