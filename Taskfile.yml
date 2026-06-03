@@ -28,3 +28,8 @@ tasks:
     summary: Runs the application in development mode
     cmds:
       - wails3 dev -config ./build/config.yml -port {{.VITE_PORT}}
+
+  darwin:package:
+    summary: Packages the application into a macOS .app bundle and .dmg
+    cmds:
+      - task: common:darwin:package

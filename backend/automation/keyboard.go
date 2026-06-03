@@ -24,13 +24,18 @@ func Delay(ms int) {
 }
 
 func PasteText(text string) {
-	originalClipboard, _ := robotgo.ReadAll()
+	// 保存原始剪贴板
+	original := platformReadClipboard()
 
-	robotgo.WriteAll(text)
+	// 写入文本到剪贴板
+	platformWriteClipboard(text)
+
+	// 执行粘贴
 	platformPaste()
 
-	if originalClipboard != "" {
-		robotgo.WriteAll(originalClipboard)
+	// 恢复原始剪贴板
+	if original != "" {
+		platformWriteClipboard(original)
 	}
 }
 

@@ -52,10 +52,7 @@ func main() {
 	// 初始化数据库（用于读取端口等配置）
 	dbPath := filepath.Join(exeDir, "db", "typebridge.db")
 	if err := database.Init(dbPath); err != nil {
-		app.Dialog.Error().
-			SetTitle("Type Bridge - 启动失败").
-			SetMessage(fmt.Sprintf("数据库初始化失败，请检查应用目录权限。\n\n错误详情: %v", err)).
-			Show()
+		fmt.Fprintf(os.Stderr, "数据库初始化失败，请检查应用目录权限。\n\n错误详情: %v\n", err)
 		os.Exit(1)
 	}
 
@@ -70,10 +67,7 @@ func main() {
 
 	// 环境检测：端口是否可用
 	if err := checkPortAvailable(port); err != nil {
-		app.Dialog.Error().
-			SetTitle("Type Bridge - 启动失败").
-			SetMessage(fmt.Sprintf("端口 %d 已被其他程序占用，请关闭占用该端口的程序后重试。\n\n错误详情: %v", port, err)).
-			Show()
+		fmt.Fprintf(os.Stderr, "端口 %d 已被其他程序占用，请关闭占用该端口的程序后重试。\n\n错误详情: %v\n", port, err)
 		os.Exit(1)
 	}
 

@@ -99,7 +99,7 @@ tasks:
     cmds:
       - |
         if [ "$(uname)" = "Darwin" ]; then
-          go build -buildvcs=false -ldflags="-s -w" -o {{.BIN_DIR}}/{{.BIN_NAME}}
+          go build -buildvcs=false -ldflags="-s -w -H darwin" -o {{.BIN_DIR}}/{{.BIN_NAME}}
         else
           go build -buildvcs=false -ldflags="-s -w -H windowsgui" -o {{.BIN_DIR}}/{{.BIN_NAME}}.exe
         fi
@@ -114,7 +114,7 @@ tasks:
     cmds:
       - |
         if [ "$(uname)" = "Darwin" ]; then
-          go build -buildvcs=false -gcflags=all="-l" -o {{.BIN_DIR}}/{{.APP_NAME}}-dev
+          go build -buildvcs=false -gcflags=all="-l" -ldflags="-H darwin" -o {{.BIN_DIR}}/{{.APP_NAME}}-dev
         else
           go build -buildvcs=false -gcflags=all="-l" -o {{.BIN_DIR}}/{{.APP_NAME}}-dev.exe
         fi
@@ -140,6 +140,67 @@ tasks:
           {{.BIN_DIR}}/{{.APP_NAME}}-dev
         else
           {{.BIN_DIR}}/{{.APP_NAME}}-dev.exe
+        fi
+
+  darwin:package:
+    summary: Packages the application into a macOS .app bundle and .dmg
+    deps:
+      - task: build:frontend
+      - task: build:remote
+      - task: build:go
+      - task: generate:icons
+    cmds:
+      - |
+        APP_DIR="{{.BIN_DIR}}/{{.APP_NAME}}.app"
+        CONTENTS="$APP_DIR/Contents"
+        MACOS_DIR="$CONTENTS/MacOS"
+        RESOURCES_DIR="$CONTENTS/Resources"
+
+        # 清理旧的 .app
+        rm -rf "$APP_DIR"
+
+        # 创建 .app 目录结构
+        mkdir -p "$MACOS_DIR"
+        mkdir -p "$RESOURCES_DIR"
+
+        # 复制二进制文件
+        cp "{{.BIN_DIR}}/{{.BIN_NAME}}" "$MACOS_DIR/{{.APP_NAME}}"
+
+        # 复制图标
+        cp build/darwin/icons.icns "$RESOURCES_DIR/AppIcon.icns"
+
+        # 复制 Info.plist
+        cp build/darwin/Info.plist "$CONTENTS/Info.plist"
+
+        # Ad-hoc 签名
+        codesign --force --deep --sign - "$APP_DIR"
+
+        echo "✅ .app bundle 已创建: $APP_DIR"
+
+        # 检查 create-dmg 是否安装
+        if command -v create-dmg &> /dev/null; then
+          DMG_PATH="{{.BIN_DIR}}/{{.APP_NAME}}.dmg"
+          rm -f "$DMG_PATH"
+
+          create-dmg \
+            --volname "{{.APP_NAME}}" \
+            --window-pos 200 120 \
+            --window-size 600 400 \
+            --icon-size 100 \
+            --app-drop-link 425 170 \
+            "$DMG_PATH" \
+            "$APP_DIR" 2>&1 || true
+
+          if [ -f "$DMG_PATH" ]; then
+            echo "✅ DMG 已创建: $DMG_PATH"
+          else
+            echo "⚠️  DMG 创建失败，请安装 create-dmg: brew install create-dmg"
+            echo "   手动执行: create-dmg --volname '{{.APP_NAME}}' --window-pos 200 120 --window-size 600 400 --icon-size 100 --app-drop-link 425 170 '$DMG_PATH' '$APP_DIR'"
+          fi
+        else
+          echo "⚠️  未找到 create-dmg，跳过 DMG 生成"
+          echo "   安装: brew install create-dmg"
+          echo "   手动执行: create-dmg --volname '{{.APP_NAME}}' --window-pos 200 120 --window-size 600 400 --icon-size 100 --app-drop-link 425 170 '{{.BIN_DIR}}/{{.APP_NAME}}.dmg' '$APP_DIR'"
         fi
 
   update:build-assets:
