@@ -104,10 +104,11 @@ jobs:
           mkdir -p release
           # Windows: upload .exe directly
           cp artifacts/*.exe release/ 2>/dev/null || true
-          # macOS: zip .app bundles (recursive search)
+          # macOS: create DMG from .app bundles
           find artifacts -name "*.app" -type d | while read app; do
             dirname=$(basename "$app" .app)
-            (cd "$(dirname "$app")" && zip -r "../../release/${dirname}.zip" "$(basename "$app")")
+            dmg_path="release/${dirname}.dmg"
+            hdiutil create -volname "$dirname" -srcfolder "$app" -ov -format UDZO "$dmg_path"
           done
 
       - name: Create GitHub Release
