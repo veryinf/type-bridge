@@ -73,9 +73,15 @@ tasks:
       - "appicon.png"
     generates:
       - "darwin/icons.icns"
-      - "windows/icon.ico"
+      - "icon.ico"
     cmds:
-      - wails3 generate icons -input appicon.png -macfilename darwin/icons.icns -windowsfilename windows/icon.ico
+      - wails3 generate icons -input appicon.png -macfilename darwin/icons.icns -windowsfilename icon.ico
+
+  generate:winres:
+    summary: Regenerate Windows .syso files (only needed when icon or version changes)
+    dir: build/windows
+    cmds:
+      - go-winres make --out ..\..\resource
 
   dev:frontend:
     summary: Runs the frontend in development mode
@@ -98,7 +104,7 @@ tasks:
       - task: go:mod:tidy
     cmds:
       - |
-        if [ "$(uname)" = "Darwin" ]; then
+        if [ "$(go env GOOS)" = "darwin" ]; then
           go build -buildvcs=false -ldflags="-s -w -H darwin" -o {{.BIN_DIR}}/{{.BIN_NAME}}
         else
           go build -buildvcs=false -ldflags="-s -w -H windowsgui" -o {{.BIN_DIR}}/{{.BIN_NAME}}.exe

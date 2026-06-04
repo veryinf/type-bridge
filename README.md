@@ -12,7 +12,7 @@
 - ⌨️ **组合键** - 支持发送 Ctrl+V 等组合键操作
 - 📋 **快捷模板** - 数据库存储常用文本模板，一键发送
 - 🎛️ **控制台配置** - JSON 驱动的按钮布局，可自定义按钮、分组和命令序列
-- 📊 **操作日志** - SQLite 存储，桌面端和手机端实时查看
+- 📊 **操作日志** - 桌面端和手机端实时查看
 - 🖥️ **系统托盘** - 最小化后在后台运行
 - 🎨 **主题切换** - 桌面端支持浅色/深色主题
 - 📡 **多网卡支持** - 自动检测局域网 IP，支持多网卡切换
@@ -122,7 +122,7 @@
 | `danger` | 危险操作（删除） |
 | `cursor` | 光标控制 |
 | `symbol` | 符号操作 |
-| `ghost` | 低调按钮 |
+| `white` | 扩展弹窗顶部按钮 |
 
 ### 命令类型
 
@@ -161,55 +161,6 @@
   { "pattern": "赫兹", "replacement": "Hz", "enabled": true },
   { "pattern": "(艾特)\\s*(QQ)\\s*点", "replacement": "@qq.", "enabled": true }
 ]
-```
-
-## 📡 API 端点
-
-手机端通过以下 HTTP API 与电脑端通信：
-
-### 执行命令
-
-```
-POST /api/v1/execute
-Content-Type: application/json
-
-{
-  "commands": [
-    { "action": "text", "text": "你好", "applyRules": true },
-    { "action": "key", "key": "enter" }
-  ]
-}
-```
-
-### 日志查询
-
-```
-GET /api/v1/logs
-```
-
-返回最近 N 条操作日志（默认 100 条）。
-
-### 模板管理
-
-```
-GET    /api/v1/templates          # 获取所有模板
-POST   /api/v1/templates          # 创建模板 {name, content, type}
-GET    /api/v1/templates/{id}     # 获取单个模板
-PUT    /api/v1/templates/{id}     # 更新模板
-DELETE /api/v1/templates/{id}     # 删除模板
-```
-
-### 控制台配置
-
-```
-GET    /api/v1/console            # 获取控制台配置
-PUT    /api/v1/console            # 保存控制台配置
-```
-
-### 版本信息
-
-```
-GET    /api/v1/version            # {"version": "1.0.0"}
 ```
 
 ## 💡 使用技巧
@@ -260,154 +211,39 @@ A:
 2. 下载新版本后，关闭旧程序
 3. 用新文件替换旧文件即可（配置文件和数据库会保留）
 
-## 📁 项目结构
-
-```
-easy-input/
-├── main.go                         # 入口文件：Wails 应用启动、系统托盘
-├── app.go                          # 核心逻辑：Wails 绑定方法、HTTP 服务器、命令执行
-├── console.json                  # 控制台配置（按钮布局 + 替换规则）
-├── build-remote.cmd                # 远程界面构建脚本
-├── wails.json                      # Wails 项目配置
-├── go.mod / go.sum                 # Go 依赖管理
-├── backend/
-│   ├── automation/
-│   │   ├── keyboard.go             # 键盘操作封装（robotgo）
-│   │   └── rules.go                # 正则替换规则引擎
-│   ├── database/
-│   │   ├── db.go                   # SQLite 数据库初始化（WAL 模式）
-│   │   ├── config.go               # 配置项读写
-│   │   ├── logs.go                 # 日志存储与查询
-│   │   └── templates.go            # 快捷模板 CRUD
-│   └── server/
-│       └── handler.go              # 版本更新检查
-├── frontend/                       # 桌面端管理界面（Wails 前端）
-│   ├── src/
-│   │   ├── pages/
-│   │   │   ├── HomePage.tsx        # 主页（QR 码、IP 切换）
-│   │   │   ├── LogPage.tsx         # 操作日志
-│   │   │   ├── SettingsPage.tsx    # 设置（端口、主题、日志数量）
-│   │   │   └── AboutPage.tsx       # 关于页面
-│   │   ├── components/
-│   │   │   ├── Sidebar.tsx         # 导航侧边栏
-│   │   │   ├── PageHeader.tsx      # 页面标题栏
-│   │   │   └── ui/                 # shadcn/ui 组件
-│   │   ├── hooks/
-│   │   │   └── useTheme.ts         # 主题切换 Hook
-│   │   └── lib/
-│   │       └── utils.ts            # 工具函数
-│   ├── wailsjs/                    # Wails 自动生成的 JS 绑定
-│   ├── package.json
-│   ├── vite.config.ts              # 开发端口 3010
-│   └── tsconfig.json
-├── remote/                         # 手机端远程操作界面
-│   ├── src/
-│   │   ├── pages/
-│   │   │   ├── ConsolePage.tsx     # 控制台主界面（动态按钮布局）
-│   │   │   └── SettingsPage.tsx    # 移动端设置
-│   │   ├── components/
-│   │   │   ├── InputBox.tsx        # 输入框 + 快捷按钮
-│   │   │   ├── ActionButtons.tsx   # 功能按钮组（JSON 配置驱动）
-│   │   │   ├── StatusBar.tsx       # 连接状态栏
-│   │   │   ├── BottomNav.tsx       # 底部导航
-│   │   │   ├── HistoryModal.tsx    # 历史记录弹窗
-│   │   │   ├── HelpModal.tsx       # 帮助弹窗
-│   │   │   ├── HelpPopover.tsx     # 帮助提示（长按触发）
-│   │   │   └── ExpandModal.tsx     # 全屏编辑器
-│   │   ├── hooks/
-│   │   │   ├── useApi.ts           # HTTP API 封装
-│   │   │   ├── useToast.tsx        # Toast 提示
-│   │   │   └── useLongPress.ts     # 长按手势
-│   │   └── types/
-│   │       └── layout.ts           # 布局配置类型定义
-│   ├── package.json
-│   ├── vite.config.ts              # 开发端口 3020
-│   └── tsconfig.json
-├── db/                             # SQLite 数据库文件目录
-│   └── typebridge.db               # 运行时自动创建
-├── docs/                           # 项目文档
-│   ├── input-engine.md             # 输入引擎设计文档
-│   └── console-json.md             # 控制台配置文档
-└── build/
-    ├── appicon.png                 # 应用图标
-    ├── windows/                    # Windows 构建资源
-    └── darwin/                     # macOS 构建资源
-```
-
-## 🛠️ 构建与运行
-
-### 环境要求
-
-- Go 1.24+
-- Node.js 16+
-- pnpm
-- Wails CLI (`go install github.com/wailsapp/wails/v2/cmd/wails@latest`)
-
-### 开发模式
-
-```bash
-# 启动开发服务器（支持热重载）
-wails dev
-```
-
-开发模式下前端运行在 Vite 开发服务器，Go 方法可通过 `http://localhost:34115` 在浏览器 DevTools 中调用。
-
-### 生产构建
-
-```bash
-# 构建可执行文件（自动构建远程界面）
-wails build
-```
-
-构建产物输出到 `build/bin/` 目录。`build-remote.cmd` 会在构建前自动编译远程界面。
-
-### 仅前端开发
-
-```bash
-# 桌面端管理界面
-cd frontend
-pnpm install
-pnpm run dev      # 开发服务器，端口 3010
-
-# 手机端远程界面
-cd remote
-pnpm install
-pnpm run dev      # 开发服务器，端口 3020（默认监听 0.0.0.0，支持局域网访问）
-```
-
-## 🏗️ 技术栈
-
-| 层级 | 技术 | 版本 |
-|------|------|------|
-| 桌面框架 | Wails v2 | v2.12.0 |
-| 后端语言 | Go | 1.24.0 |
-| 数据库 | SQLite (go-sqlite3) | v1.14.44 |
-| 键盘自动化 | robotgo | v1.0.0 |
-| 前端框架 | React | 18.x |
-| 前端语言 | TypeScript | 6.x |
-| 构建工具 | Vite | 3.x |
-| UI 样式 | Tailwind CSS | 4.2.x |
-| UI 组件 | shadcn/ui (Radix UI) | - |
-| 路由库 | wouter | 3.10.0 |
-| 图标库 | lucide-react | 1.16.0 |
-| 二维码 | qrcode.react | 4.2.0 |
-| 系统托盘 | systray | v1.2.2 |
-
 ## 📱 支持平台
 
 - ✅ Windows 10/11
 - ⏳ macOS（即将支持）
 - ✅ 手机浏览器：Chrome、Safari、Firefox 等现代浏览器
 
-## 📞 获取帮助
+## 🛠️ 从源码构建
 
-- 查看程序内的帮助按钮
-- 查阅 `docs/` 目录下的技术文档
-- 在 GitHub 提交 Issue：[项目地址](https://github.com/veryinf/easy-input/issues)
+> 以下内容面向开发者，普通用户请直接下载 [Releases](https://github.com/veryinf/easy-input/releases) 版本。
 
-## 📄 许可证
+### 环境要求
 
-本项目采用 MIT 许可证。
+- Go 1.25+
+- Node.js 16+、pnpm
+- [Wails v3 CLI](https://wails.io/)、[Task](https://taskfile.dev/)
+
+### 构建
+
+```bash
+task build            # 一键构建（前端 + 远程界面 + Go 二进制）
+task build:frontend   # 仅构建桌面端前端
+task build:remote     # 仅构建手机端远程界面
+```
+
+### 开发模式
+
+```bash
+wails3 dev            # 启动完整开发环境（热重载）
+cd frontend && pnpm dev    # 仅启动桌面端前端（端口 9245）
+cd remote && pnpm dev      # 仅启动手机端远程界面（端口 3020）
+```
+
+详细开发文档请参阅 [docs/](docs/) 目录。
 
 ---
 

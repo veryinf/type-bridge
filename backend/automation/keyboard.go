@@ -30,8 +30,14 @@ func PasteText(text string) {
 	// 写入文本到剪贴板
 	platformWriteClipboard(text)
 
+	// 等待剪贴板写入完成
+	time.Sleep(50 * time.Millisecond)
+
 	// 执行粘贴
 	platformPaste()
+
+	// 等待粘贴完成
+	time.Sleep(50 * time.Millisecond)
 
 	// 恢复原始剪贴板
 	if original != "" {

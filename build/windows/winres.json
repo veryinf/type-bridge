@@ -1,0 +1,34 @@
+{
+  "RT_MANIFEST": {
+    "#1": {
+      "0409": "wails.exe.manifest"
+    }
+  },
+  "RT_GROUP_ICON": {
+    "#1": {
+      "0000": "icon.ico"
+    }
+  },
+  "RT_VERSION": {
+    "#1": {
+      "0000": {
+        "fixed": {
+          "file_version": "1.0.0.0",
+          "product_version": "1.0.0.0"
+        },
+        "info": {
+          "0409": {
+            "CompanyName": "veryinf",
+            "FileDescription": "Type Bridge - 手机电脑输入同步",
+            "FileVersion": "1.0.0.0",
+            "InternalName": "TypeBridge",
+            "LegalCopyright": "(c) 2025, veryinf",
+            "OriginalFilename": "TypeBridge.exe",
+            "ProductName": "Type Bridge",
+            "ProductVersion": "1.0.0.0"
+          }
+        }
+      }
+    }
+  }
+}

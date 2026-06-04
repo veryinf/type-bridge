@@ -102,8 +102,9 @@ button {
 
 /* Page Base */
 .page {
-  height: 100%;
+  min-height: 100%;
   padding: var(--spacing-md);
+  padding-bottom: calc(var(--nav-height) + var(--spacing-lg));
   animation: fadeIn 0.2s ease-in-out;
 }
 
@@ -485,6 +486,7 @@ button {
   max-height: 80vh;
   display: flex;
   flex-direction: column;
+  height: 80vh;
 }
 
 .history-actions {
@@ -514,6 +516,25 @@ button {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-xs);
+  min-height: 0;
+}
+
+.history-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.history-list::-webkit-scrollbar-track {
+  background: var(--bg-primary);
+  border-radius: 3px;
+}
+
+.history-list::-webkit-scrollbar-thumb {
+  background: var(--color-clear);
+  border-radius: 3px;
+}
+
+.history-list::-webkit-scrollbar-thumb:hover {
+  background: var(--color-danger);
 }
 
 .history-empty {
@@ -530,6 +551,8 @@ button {
   background: var(--bg-primary);
   border-radius: var(--radius-sm);
   overflow: hidden;
+  flex-shrink: 0;
+  min-height: 52px;
 }
 
 .history-item-content {
