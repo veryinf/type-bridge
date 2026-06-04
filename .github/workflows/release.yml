@@ -17,14 +17,16 @@ jobs:
             goos: windows
             goarch: amd64
             asset_name: TypeBridge-windows-amd64.exe
-          - os: macos-13
+          - os: macos-14
             goos: darwin
             goarch: amd64
             asset_name: TypeBridge-macos-amd64
+            cgo_arch_flags: "-arch x86_64"
           - os: macos-14
             goos: darwin
             goarch: arm64
             asset_name: TypeBridge-macos-arm64
+            cgo_arch_flags: ""
 
     runs-on: ${{ matrix.os }}
 
@@ -62,6 +64,8 @@ jobs:
           GOOS: ${{ matrix.goos }}
           GOARCH: ${{ matrix.goarch }}
           APP_VERSION: ${{ github.ref_name }}
+          CGO_CFLAGS: ${{ matrix.cgo_arch_flags }}
+          CGO_LDFLAGS: ${{ matrix.cgo_arch_flags }}
 
       - name: Bundle macOS .app
         if: runner.os == 'macOS'
