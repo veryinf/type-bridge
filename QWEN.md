@@ -29,15 +29,17 @@ Type Bridge 是一款基于 Wails v3 框架的桌面应用程序，允许用户�
 | 后端语言 | Go | 1.25.0 |
 | 数据库 | SQLite (go-sqlite3) | v1.14.44 |
 | 键盘自动化 | robotgo | v1.0.0 |
-| 前端框架 | React | 18.x |
-| 前端语言 | TypeScript | 6.x |
-| 构建工具 | Vite | 3.x |
-| UI 样式 | Tailwind CSS | 4.2.x |
+| 前端框架 | React | 18.2.0 |
+| 前端语言 | TypeScript | 6.0.3 |
+| 构建工具 | Vite | 3.0.7 |
+| UI 样式 | Tailwind CSS | 4.3.0 |
 | UI 组件 | shadcn/ui (Radix UI) | - |
+| 工具库 | clsx + tailwind-merge + class-variance-authority | 2.1.1 / 3.6.0 / 0.7.1 |
 | 桌面端路由 | wouter | 3.10.0 |
 | 手机端路由 | react-router-dom | 7.16.0 |
 | 图标库 | lucide-react | 1.16.0 |
 | 二维码 | qrcode.react | 4.2.0 |
+| 数据校验 | zod | 4.4.3 |
 | 系统托盘 | systray | v1.2.2 |
 | 包管理 | pnpm | - |
 | 构建编排 | Taskfile v3 | - |
@@ -242,6 +244,6 @@ task generate:bindings    # 生成 Wails JS 绑定
 
 ## 支持平台
 
-- ✅ Windows 10/11
-- ⏳ macOS（构建配置已就绪，待完善）
+- ✅ Windows 10/11 (amd64)
+- ✅ macOS 12.0+ (Intel amd64 / Apple Silicon arm64)
 - ✅ 手机浏览器：Chrome、Safari、Firefox 等现代浏览器

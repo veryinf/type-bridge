@@ -81,7 +81,7 @@ tasks:
     summary: Regenerate Windows .syso files (only needed when icon or version changes)
     dir: build/windows
     cmds:
-      - go-winres make --out ..\..\resource
+      - go-winres make --in winres.json --out ..\..\resource
 
   dev:frontend:
     summary: Runs the frontend in development mode
@@ -104,14 +104,18 @@ tasks:
       - task: go:mod:tidy
     cmds:
       - |
+        VER_FLAG=""
+        if [ -n "$APP_VERSION" ]; then
+          VER_FLAG="-X main.CurrentVersion=$APP_VERSION"
+        fi
         if [ "$(go env GOOS)" = "darwin" ]; then
-          go build -buildvcs=false -ldflags="-s -w -H darwin" -o {{.BIN_DIR}}/{{.BIN_NAME}}
+          go build -buildvcs=false -ldflags="-s -w -H darwin $VER_FLAG" -o {{.BIN_DIR}}/{{.BIN_NAME}}
         else
-          go build -buildvcs=false -ldflags="-s -w -H windowsgui" -o {{.BIN_DIR}}/{{.BIN_NAME}}.exe
+          go build -buildvcs=false -ldflags="-s -w -H windowsgui $VER_FLAG" -o {{.BIN_DIR}}/{{.BIN_NAME}}.exe
         fi
     env:
       CGO_ENABLED: 1
-      MACOSX_DEPLOYMENT_TARGET: "13.0"
+      MACOSX_DEPLOYMENT_TARGET: "12.0"
 
   build:go:dev:
     summary: Builds the Go application with dev binary name
@@ -208,6 +212,25 @@ tasks:
           echo "   安装: brew install create-dmg"
           echo "   手动执行: create-dmg --volname '{{.APP_NAME}}' --window-pos 200 120 --window-size 600 400 --icon-size 100 --app-drop-link 425 170 '{{.BIN_DIR}}/{{.APP_NAME}}.dmg' '$APP_DIR'"
         fi
+
+  darwin:bundle:
+    summary: Creates .app bundle from existing build output (run build first)
+    cmds:
+      - |
+        APP_DIR="{{.BIN_DIR}}/{{.APP_NAME}}.app"
+        CONTENTS="$APP_DIR/Contents"
+        MACOS_DIR="$CONTENTS/MacOS"
+        RESOURCES_DIR="$CONTENTS/Resources"
+
+        rm -rf "$APP_DIR"
+        mkdir -p "$MACOS_DIR" "$RESOURCES_DIR"
+
+        cp "{{.BIN_DIR}}/{{.BIN_NAME}}" "$MACOS_DIR/{{.APP_NAME}}"
+        cp build/darwin/icons.icns "$RESOURCES_DIR/AppIcon.icns"
+        cp build/darwin/Info.plist "$CONTENTS/Info.plist"
+
+        codesign --force --deep --sign - "$APP_DIR"
+        echo "✅ .app bundle 已创建: $APP_DIR"
 
   update:build-assets:
     summary: Updates the build assets

@@ -33,3 +33,8 @@ tasks:
     summary: Packages the application into a macOS .app bundle and .dmg
     cmds:
       - task: common:darwin:package
+
+  darwin:bundle:
+    summary: Creates .app bundle from existing build output
+    cmds:
+      - task: common:darwin:bundle

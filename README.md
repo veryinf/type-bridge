@@ -213,8 +213,8 @@ A:
 
 ## 📱 支持平台
 
-- ✅ Windows 10/11
-- ⏳ macOS（即将支持）
+- ✅ Windows 10/11 (amd64)
+- ✅ macOS 12.0+ (Intel amd64 / Apple Silicon arm64)
 - ✅ 手机浏览器：Chrome、Safari、Firefox 等现代浏览器
 
 ## 🛠️ 从源码构建
