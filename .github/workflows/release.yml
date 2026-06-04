@@ -70,13 +70,17 @@ jobs:
       - name: Bundle macOS .app
         if: runner.os == 'macOS'
         shell: bash
-        run: task darwin:bundle
+        run: |
+          task darwin:bundle
+          # Rename .app to include architecture suffix
+          mv build/bin/TypeBridge.app "build/bin/TypeBridge-${{ matrix.goarch }}.app"
 
       - name: Prepare release asset
         shell: bash
         run: |
           if [ "${{ runner.os }}" = "Windows" ]; then
             cp build/bin/TypeBridge.exe "build/bin/${{ matrix.asset_name }}"
+            rm build/bin/TypeBridge.exe
           fi
 
       - name: Upload artifact
